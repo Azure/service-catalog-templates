@@ -1,0 +1,14 @@
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: BindingTemplate
+metadata:
+  name: mysqldb
+  namespace: default
+  labels:
+    serviceType: mysqldb # TODO: apply this automatically when the template is created
+spec:
+  serviceType: mysqldb
+  parameters:
+    param1: defaultvalue1
+  secretKeys: # Broker-specific json output keys mapped to predefined secret key names
+    database: database-name
+    host: database-host

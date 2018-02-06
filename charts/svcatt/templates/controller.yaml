@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "service-catalog-templates.fullname" . }}
+  labels:
+    app: {{ template "service-catalog-templates.name" . }}
+    chart: {{ template "service-catalog-templates.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "service-catalog-templates.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+       app: {{ template "service-catalog-templates.name" . }}
+       chart: {{ template "service-catalog-templates.chart" . }}
+       release: {{ .Release.Name }}
+       heritage: {{ .Release.Service }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccountName }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}

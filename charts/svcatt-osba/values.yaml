@@ -1,0 +1,6 @@
+clusterServiceClassExternalName: azure-mysql
+clusterServicePlanExternalName: basic50
+parameters:
+  location: eastus
+  resourceGroup: default
+  sslEnforcement: disabled

@@ -1,0 +1,29 @@
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: BrokerInstanceTemplate
+metadata:
+  name: default-mysqldb
+  labels:
+    serviceType: mysqldb
+spec:
+  serviceType: mysqldb
+  brokerName: osba
+  clusterServiceClassExternalName: {{ .Values.clusterServiceClassExternalName }}
+  clusterServicePlanExternalName: {{ .Values.clusterServicePlanExternalName }}
+  parameters:
+    location: {{ .Values.parameters.location }}
+    resourceGroup: {{ .Values.parameters.resourceGroup }}
+    sslEnforcement: {{ .Values.parameters.sslEnforcement }}
+    firewallRules:
+    - startIPAddress: "0.0.0.0"
+      endIPAddress: "255.255.255.255"
+      name: "AllowAll"
+---
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: BrokerBindingTemplate
+metadata:
+  name: default-mysqldb
+  labels:
+    serviceType: mysqldb
+spec:
+  serviceType: mysqldb
+  brokerName: osba

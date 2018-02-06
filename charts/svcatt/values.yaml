@@ -1,0 +1,8 @@
+image:
+  repository: carolynvs/service-catalog-templates
+  tag: latest
+  pullPolicy: IfNotPresent
+
+deploymentStrategy: RollingUpdate
+
+serviceAccountName: service-catalog-templates

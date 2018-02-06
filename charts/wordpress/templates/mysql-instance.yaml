@@ -1,0 +1,24 @@
+{{- if not .Values.mariadb.enabled }}
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: TemplatedInstance
+metadata:
+  name: {{ template "fullname" . }}-mysql-instance
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  serviceType: mysqldb
+  # TODO: apply if set in values.yaml
+  #clusterServiceClassExternalName: azure-mysqldb
+  #clusterServicePlanExternalName: {{ .Values.externalDatabase.azure.servicePlan }}
+  # TODO: How to best allow someone to override these with conditionals without putting broker specific values in the chart?
+  #parameters:
+    #location: {{ .Values.externalDatabase.azure.location }}
+    #resourceGroup: {{ .Release.Namespace }}
+    # These are defined by the broker and/or cluster
+    #sslEnforcement: disabled
+    #firewallStartIPAddress: 0.0.0.0
+    #firewallEndIPAddress: 255.255.255.255
+{{- end }}

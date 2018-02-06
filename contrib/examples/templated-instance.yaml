@@ -1,0 +1,11 @@
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: TemplatedInstance
+metadata:
+  name: testdb
+  namespace: default
+spec:
+  serviceType: mysqldb
+  #parametersFrom: # TODO: Why is this failing with an array error?
+  #    - secretKeyRef:
+  #        name: secretName
+  #        key: myKey

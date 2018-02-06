@@ -1,0 +1,15 @@
+{{- if not .Values.mariadb.enabled }}
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: TemplatedBinding
+metadata:
+  name: {{ template "fullname" . }}-mysql-binding
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  instanceRef:
+    name: {{ template "fullname" . }}-mysql-instance
+  secretName: {{ template "fullname" . }}-mysql-secret
+{{- end }}

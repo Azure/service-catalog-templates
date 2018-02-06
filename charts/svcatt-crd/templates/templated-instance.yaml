@@ -1,0 +1,38 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: templatedinstances.templates.servicecatalog.k8s.io
+spec:
+  group: templates.servicecatalog.k8s.io
+  version: experimental
+  scope: Namespaced
+  names:
+    plural: templatedinstances
+    singular: templatedinstance
+    kind: TemplatedInstance
+    shortNames:
+    - tinst
+  validation:
+    # See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject
+    openAPIV3Schema:
+      properties:
+        spec:
+          required:
+          - serviceType
+          properties:
+            serviceType:
+              type: string
+            planSelector:
+              type: object
+            clusterServiceClassExternalName:
+              type: string
+            clusterServiceClassName:
+             type: string
+            clusterServicePlanExternalName:
+              type: string
+            clusterServicePlanName:
+              type: string
+            parameters:
+              type: object
+            parametersFrom:
+              type: object
