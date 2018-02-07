@@ -8,9 +8,6 @@ if [[ "$(minikube status)" != *"Running"* ]]; then
     --bootstrapper=kubeadm
 fi
 
-#kubectl apply -f ./hack/admin-role.yaml
-#watch kubectl get pods -n kube-system
-
 kubectl apply -f https://raw.githubusercontent.com/Azure/helm-charts/master/docs/prerequisities/helm-rbac-config.yaml
 helm init --service-account tiller
 watch kubectl get pods -n kube-system

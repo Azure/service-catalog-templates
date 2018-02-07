@@ -11,20 +11,20 @@ endif
 
 default: build
 
-.PHONY: buildimage build run create-cluster test
+.PHONY: build-image build create-cluster test
 
-buildimage:
-	docker build -t $(DOCKER_IMG) ./hack/buildimage
+build-image:
+	docker build -t $(DOCKER_IMG) ./build/build-image
 
-#build: buildimage
-#	$(DO) ./hack/build.sh
+build: build-image
+	$(DO) ./build/build.sh
 
-#run: buildimage
+#run: build-image
 #	$(DO) ./hack/run.sh
 #	$(DO) svcat get brokers
 
 create-cluster:
 	./hack/create-cluster.sh
 
-test: buildimage
+test: build-image
 	$(DO) ./hack/test.sh
