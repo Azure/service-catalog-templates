@@ -213,6 +213,15 @@
   revision = "b19bf474d317b857955b12035d2c5acb57ce8b01"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "imports"
+  ]
+  revision = "66487607e2081c7c2af2281c62c14ee000d5024b"
+
+[[projects]]
   name = "gopkg.in/inf.v0"
   packages = ["."]
   revision = "3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4"
@@ -226,7 +235,7 @@
 [[projects]]
   name = "k8s.io/api"
   packages = [
-    "admissionregistration/experimental",
+    "admissionregistration/v1alpha1",
     "admissionregistration/v1beta1",
     "apps/v1",
     "apps/v1beta1",
@@ -247,12 +256,12 @@
     "networking/v1",
     "policy/v1beta1",
     "rbac/v1",
-    "rbac/experimental",
+    "rbac/v1alpha1",
     "rbac/v1beta1",
-    "scheduling/experimental",
-    "settings/experimental",
+    "scheduling/v1alpha1",
+    "settings/v1alpha1",
     "storage/v1",
-    "storage/experimental",
+    "storage/v1alpha1",
     "storage/v1beta1"
   ]
   revision = "006a217681ae70cbacdd66a5e2fca1a61a8ff28e"
@@ -267,7 +276,7 @@
     "pkg/apis/meta/internalversion",
     "pkg/apis/meta/v1",
     "pkg/apis/meta/v1/unstructured",
-    "pkg/apis/meta/experimental",
+    "pkg/apis/meta/v1alpha1",
     "pkg/conversion",
     "pkg/conversion/queryparams",
     "pkg/fields",
@@ -314,7 +323,7 @@
     "discovery/fake",
     "informers",
     "informers/admissionregistration",
-    "informers/admissionregistration/experimental",
+    "informers/admissionregistration/v1alpha1",
     "informers/admissionregistration/v1beta1",
     "informers/apps",
     "informers/apps/v1",
@@ -342,19 +351,19 @@
     "informers/policy/v1beta1",
     "informers/rbac",
     "informers/rbac/v1",
-    "informers/rbac/experimental",
+    "informers/rbac/v1alpha1",
     "informers/rbac/v1beta1",
     "informers/scheduling",
-    "informers/scheduling/experimental",
+    "informers/scheduling/v1alpha1",
     "informers/settings",
-    "informers/settings/experimental",
+    "informers/settings/v1alpha1",
     "informers/storage",
     "informers/storage/v1",
-    "informers/storage/experimental",
+    "informers/storage/v1alpha1",
     "informers/storage/v1beta1",
     "kubernetes",
     "kubernetes/scheme",
-    "kubernetes/typed/admissionregistration/experimental",
+    "kubernetes/typed/admissionregistration/v1alpha1",
     "kubernetes/typed/admissionregistration/v1beta1",
     "kubernetes/typed/apps/v1",
     "kubernetes/typed/apps/v1beta1",
@@ -375,14 +384,14 @@
     "kubernetes/typed/networking/v1",
     "kubernetes/typed/policy/v1beta1",
     "kubernetes/typed/rbac/v1",
-    "kubernetes/typed/rbac/experimental",
+    "kubernetes/typed/rbac/v1alpha1",
     "kubernetes/typed/rbac/v1beta1",
-    "kubernetes/typed/scheduling/experimental",
-    "kubernetes/typed/settings/experimental",
+    "kubernetes/typed/scheduling/v1alpha1",
+    "kubernetes/typed/settings/v1alpha1",
     "kubernetes/typed/storage/v1",
-    "kubernetes/typed/storage/experimental",
+    "kubernetes/typed/storage/v1alpha1",
     "kubernetes/typed/storage/v1beta1",
-    "listers/admissionregistration/experimental",
+    "listers/admissionregistration/v1alpha1",
     "listers/admissionregistration/v1beta1",
     "listers/apps/v1",
     "listers/apps/v1beta1",
@@ -399,12 +408,12 @@
     "listers/networking/v1",
     "listers/policy/v1beta1",
     "listers/rbac/v1",
-    "listers/rbac/experimental",
+    "listers/rbac/v1alpha1",
     "listers/rbac/v1beta1",
-    "listers/scheduling/experimental",
-    "listers/settings/experimental",
+    "listers/scheduling/v1alpha1",
+    "listers/settings/v1alpha1",
     "listers/storage/v1",
-    "listers/storage/experimental",
+    "listers/storage/v1alpha1",
     "listers/storage/v1beta1",
     "pkg/version",
     "rest",
@@ -431,6 +440,33 @@
   revision = "9389c055a838d4f208b699b3c7c51b70f2368861"
 
 [[projects]]
+  branch = "release-1.9"
+  name = "k8s.io/code-generator"
+  packages = [
+    "cmd/client-gen",
+    "cmd/client-gen/args",
+    "cmd/client-gen/generators",
+    "cmd/client-gen/generators/fake",
+    "cmd/client-gen/generators/scheme",
+    "cmd/client-gen/generators/util",
+    "cmd/client-gen/path",
+    "cmd/client-gen/types"
+  ]
+  revision = "91d3f6a57905178524105a085085901bb73bd3dc"
+
+[[projects]]
+  branch = "master"
+  name = "k8s.io/gengo"
+  packages = [
+    "args",
+    "generator",
+    "namer",
+    "parser",
+    "types"
+  ]
+  revision = "8394c995ab8fbe52216f38d0e1a37de36d820528"
+
+[[projects]]
   name = "k8s.io/kube-openapi"
   packages = [
     "pkg/common",
@@ -441,6 +477,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b52983c476a34a905f7bb6962bff59b533f187da2e118453e0d4bc2c58fbf72b"
+  inputs-digest = "9bc21ae8fa837a9ede973f654130901c07baeb575bfd02ff60b605a833a2da45"
   solver-name = "gps-cdcl"
   solver-version = 1
