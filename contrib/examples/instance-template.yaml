@@ -1,0 +1,16 @@
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: InstanceTemplate
+metadata:
+  name: cheap-mysldb-by-default
+  namespace: default
+  labels:
+    type: mysqldb
+spec:
+  clusterServiceClassExternalName: azure-mysqldb
+  clusterServicePlanExternalName: basic50
+  parameters:
+    location: eastus
+    resourceGroup: default
+    sslEnforcement: disabled
+    firewallStartIPAddress: "0.0.0.0"
+    firewallEndIPAddress: "255.255.255.255"

@@ -1,3 +1,20 @@
+# Service Catalog Templates
+
+Cluster operators use Service Catalog Templates to define a default class, plan and parameters when provisioning a 
+service of a particular type, such as “mysqldb”. This enables an application to specify a dependency on a type of 
+service without requiring upfront knowledge of which broker it will be provisioned on, in addition to all the 
+broker-specific parameters for a particular class and plan.
+
+> “My application requires a mysql database.”
+>
+> “I just want to try out this application using the recommended defaults.”
+> 
+> “I need to encourage everyone to use the cheapest plans possible in our integration environment”
+
+[Read the full proposal](https://docs.google.com/document/d/1vUxiOCKdnl47RKzeRgJ43_6eV2g95T6yM_m50Msrm3c)
+
+This repository is a proof of concept for the above proposal. Our goal is to validate assumptions and technical 
+decisions, and then contribute it upstream to Kubernetes.
 
 # Contributing
 
