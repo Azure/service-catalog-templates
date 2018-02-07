@@ -1,44 +1,28 @@
-/*
-Copyright 2018 The Kubernetes Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package experimental
 
 import (
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
-	rest "k8s.io/client-go/rest"
 	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
 	"github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
+	rest "k8s.io/client-go/rest"
 )
 
-type SamplecontrollerexperimentalInterface interface {
+type TemplatesExperimentalInterface interface {
 	RESTClient() rest.Interface
-	FoosGetter
+	InstanceTemplatesGetter
 }
 
-// SamplecontrollerexperimentalClient is used to interact with features provided by the templates.servicecatalog.k8s.io group.
-type SamplecontrollerexperimentalClient struct {
+// TemplatesExperimentalClient is used to interact with features provided by the templates.servicecatalog.k8s.io group.
+type TemplatesExperimentalClient struct {
 	restClient rest.Interface
 }
 
-func (c *SamplecontrollerexperimentalClient) Foos(namespace string) FooInterface {
-	return newFoos(c, namespace)
+func (c *TemplatesExperimentalClient) InstanceTemplates(namespace string) InstanceTemplateInterface {
+	return newInstanceTemplates(c, namespace)
 }
 
-// NewForConfig creates a new SamplecontrollerexperimentalClient for the given config.
-func NewForConfig(c *rest.Config) (*SamplecontrollerexperimentalClient, error) {
+// NewForConfig creates a new TemplatesExperimentalClient for the given config.
+func NewForConfig(c *rest.Config) (*TemplatesExperimentalClient, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -47,12 +31,12 @@ func NewForConfig(c *rest.Config) (*SamplecontrollerexperimentalClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SamplecontrollerexperimentalClient{client}, nil
+	return &TemplatesExperimentalClient{client}, nil
 }
 
-// NewForConfigOrDie creates a new SamplecontrollerexperimentalClient for the given config and
+// NewForConfigOrDie creates a new TemplatesExperimentalClient for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *SamplecontrollerexperimentalClient {
+func NewForConfigOrDie(c *rest.Config) *TemplatesExperimentalClient {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -60,9 +44,9 @@ func NewForConfigOrDie(c *rest.Config) *SamplecontrollerexperimentalClient {
 	return client
 }
 
-// New creates a new SamplecontrollerexperimentalClient for the given RESTClient.
-func New(c rest.Interface) *SamplecontrollerexperimentalClient {
-	return &SamplecontrollerexperimentalClient{c}
+// New creates a new TemplatesExperimentalClient for the given RESTClient.
+func New(c rest.Interface) *TemplatesExperimentalClient {
+	return &TemplatesExperimentalClient{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -80,7 +64,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *SamplecontrollerexperimentalClient) RESTClient() rest.Interface {
+func (c *TemplatesExperimentalClient) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

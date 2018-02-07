@@ -28,7 +28,7 @@ import (
 // FooLister helps list Foos.
 type FooLister interface {
 	// List lists all Foos in the indexer.
-	List(selector labels.Selector) (ret []*experimental.Foo, err error)
+	List(selector labels.Selector) (ret []*experimental.InstanceTemplate, err error)
 	// Foos returns an object that can list and get Foos.
 	Foos(namespace string) FooNamespaceLister
 	FooListerExpansion
@@ -45,9 +45,9 @@ func NewFooLister(indexer cache.Indexer) FooLister {
 }
 
 // List lists all Foos in the indexer.
-func (s *fooLister) List(selector labels.Selector) (ret []*experimental.Foo, err error) {
+func (s *fooLister) List(selector labels.Selector) (ret []*experimental.InstanceTemplate, err error) {
 	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*experimental.Foo))
+		ret = append(ret, m.(*experimental.InstanceTemplate))
 	})
 	return ret, err
 }
@@ -60,9 +60,9 @@ func (s *fooLister) Foos(namespace string) FooNamespaceLister {
 // FooNamespaceLister helps list and get Foos.
 type FooNamespaceLister interface {
 	// List lists all Foos in the indexer for a given namespace.
-	List(selector labels.Selector) (ret []*experimental.Foo, err error)
-	// Get retrieves the Foo from the indexer for a given namespace and name.
-	Get(name string) (*experimental.Foo, error)
+	List(selector labels.Selector) (ret []*experimental.InstanceTemplate, err error)
+	// Get retrieves the InstanceTemplate from the indexer for a given namespace and name.
+	Get(name string) (*experimental.InstanceTemplate, error)
 	FooNamespaceListerExpansion
 }
 
@@ -74,15 +74,15 @@ type fooNamespaceLister struct {
 }
 
 // List lists all Foos in the indexer for a given namespace.
-func (s fooNamespaceLister) List(selector labels.Selector) (ret []*experimental.Foo, err error) {
+func (s fooNamespaceLister) List(selector labels.Selector) (ret []*experimental.InstanceTemplate, err error) {
 	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*experimental.Foo))
+		ret = append(ret, m.(*experimental.InstanceTemplate))
 	})
 	return ret, err
 }
 
-// Get retrieves the Foo from the indexer for a given namespace and name.
-func (s fooNamespaceLister) Get(name string) (*experimental.Foo, error) {
+// Get retrieves the InstanceTemplate from the indexer for a given namespace and name.
+func (s fooNamespaceLister) Get(name string) (*experimental.InstanceTemplate, error) {
 	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
 	if err != nil {
 		return nil, err
@@ -90,5 +90,5 @@ func (s fooNamespaceLister) Get(name string) (*experimental.Foo, error) {
 	if !exists {
 		return nil, errors.NewNotFound(experimental.Resource("foo"), name)
 	}
-	return obj.(*experimental.Foo), nil
+	return obj.(*experimental.InstanceTemplate), nil
 }

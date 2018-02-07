@@ -24,32 +24,32 @@ import (
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Foo is a specification for a Foo resource
-type Foo struct {
+// InstanceTemplate is a specification for a InstanceTemplate resource
+type InstanceTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   FooSpec   `json:"spec"`
-	Status FooStatus `json:"status"`
+	Spec   InstanceTemplateSpec   `json:"spec"`
+	Status InstanceTemplateStatus `json:"status"`
 }
 
-// FooSpec is the spec for a Foo resource
-type FooSpec struct {
-	DeploymentName string `json:"deploymentName"`
-	Replicas       *int32 `json:"replicas"`
+// InstanceTemplateSpec is the spec for a InstanceTemplate resource
+type InstanceTemplateSpec struct {
+	ClusterServiceClassExternalName string `json:"clusterServiceClassExternalName"`
+	ClusterServicePlanExternalName  string `json:"clusterServicePlanExternalName"`
 }
 
-// FooStatus is the status for a Foo resource
-type FooStatus struct {
-	AvailableReplicas int32 `json:"availableReplicas"`
+// InstanceTemplateStatus is the status for a InstanceTemplate resource
+type InstanceTemplateStatus struct {
+	Message int32 `json:"message"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// FooList is a list of Foo resources
-type FooList struct {
+// InstanceTemplateList is a list of InstanceTemplate resources
+type InstanceTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Foo `json:"items"`
+	Items []InstanceTemplate `json:"items"`
 }

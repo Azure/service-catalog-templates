@@ -28,5 +28,8 @@ CODEGEN_PKG=${CODEGEN_PKG:-$(cd ${SCRIPT_ROOT}; ls -d -1 ./vendor/k8s.io/code-ge
 ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
   github.com/Azure/service-catalog-templates/pkg/client github.com/Azure/service-catalog-templates/pkg/apis \
   templatescontroller:experimental \
-  --output-base "$(dirname ${BASH_SOURCE})/../../.." \
   --go-header-file ${SCRIPT_ROOT}/hack/custom-boilerplate.go.txt
+
+# Fix casing problem... not sure why Azure is being turned into azure
+
+find ./pkg/client -type f -exec sed -i 's/azure/Azure/g' {} \;

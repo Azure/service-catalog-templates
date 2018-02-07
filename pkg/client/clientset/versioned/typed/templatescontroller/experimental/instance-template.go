@@ -31,16 +31,16 @@ type FoosGetter interface {
 	Foos(namespace string) FooInterface
 }
 
-// FooInterface has methods to work with Foo resources.
+// FooInterface has methods to work with InstanceTemplate resources.
 type FooInterface interface {
-	Create(*experimental.Foo) (*experimental.Foo, error)
-	Update(*experimental.Foo) (*experimental.Foo, error)
+	Create(*experimental.InstanceTemplate) (*experimental.InstanceTemplate, error)
+	Update(*experimental.InstanceTemplate) (*experimental.InstanceTemplate, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*experimental.Foo, error)
-	List(opts v1.ListOptions) (*experimental.FooList, error)
+	Get(name string, options v1.GetOptions) (*experimental.InstanceTemplate, error)
+	List(opts v1.ListOptions) (*experimental.InstanceTemplateList, error)
 	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *experimental.Foo, err error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *experimental.InstanceTemplate, err error)
 	FooExpansion
 }
 
@@ -59,8 +59,8 @@ func newFoos(c *SamplecontrollerexperimentalClient, namespace string) *foos {
 }
 
 // Get takes name of the foo, and returns the corresponding foo object, and an error if there is any.
-func (c *foos) Get(name string, options v1.GetOptions) (result *experimental.Foo, err error) {
-	result = &experimental.Foo{}
+func (c *foos) Get(name string, options v1.GetOptions) (result *experimental.InstanceTemplate, err error) {
+	result = &experimental.InstanceTemplate{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("foos").
@@ -72,8 +72,8 @@ func (c *foos) Get(name string, options v1.GetOptions) (result *experimental.Foo
 }
 
 // List takes label and field selectors, and returns the list of Foos that match those selectors.
-func (c *foos) List(opts v1.ListOptions) (result *experimental.FooList, err error) {
-	result = &experimental.FooList{}
+func (c *foos) List(opts v1.ListOptions) (result *experimental.InstanceTemplateList, err error) {
+	result = &experimental.InstanceTemplateList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("foos").
@@ -94,8 +94,8 @@ func (c *foos) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a foo and creates it.  Returns the server's representation of the foo, and an error, if there is any.
-func (c *foos) Create(foo *experimental.Foo) (result *experimental.Foo, err error) {
-	result = &experimental.Foo{}
+func (c *foos) Create(foo *experimental.InstanceTemplate) (result *experimental.InstanceTemplate, err error) {
+	result = &experimental.InstanceTemplate{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("foos").
@@ -106,8 +106,8 @@ func (c *foos) Create(foo *experimental.Foo) (result *experimental.Foo, err erro
 }
 
 // Update takes the representation of a foo and updates it. Returns the server's representation of the foo, and an error, if there is any.
-func (c *foos) Update(foo *experimental.Foo) (result *experimental.Foo, err error) {
-	result = &experimental.Foo{}
+func (c *foos) Update(foo *experimental.InstanceTemplate) (result *experimental.InstanceTemplate, err error) {
+	result = &experimental.InstanceTemplate{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("foos").
@@ -141,8 +141,8 @@ func (c *foos) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOp
 }
 
 // Patch applies the patch and returns the patched foo.
-func (c *foos) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *experimental.Foo, err error) {
-	result = &experimental.Foo{}
+func (c *foos) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *experimental.InstanceTemplate, err error) {
+	result = &experimental.InstanceTemplate{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("foos").

@@ -44,14 +44,14 @@ type fooInformer struct {
 	namespace        string
 }
 
-// NewFooInformer constructs a new informer for Foo type.
+// NewFooInformer constructs a new informer for InstanceTemplate type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewFooInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewFilteredFooInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredFooInformer constructs a new informer for Foo type.
+// NewFilteredFooInformer constructs a new informer for InstanceTemplate type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredFooInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
@@ -70,7 +70,7 @@ func NewFilteredFooInformer(client versioned.Interface, namespace string, resync
 				return client.Samplecontrollerexperimental().Foos(namespace).Watch(options)
 			},
 		},
-		&templatescontroller_experimental.Foo{},
+		&templatescontroller_experimental.InstanceTemplate{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *fooInformer) defaultInformer(client versioned.Interface, resyncPeriod t
 }
 
 func (f *fooInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&templatescontroller_experimental.Foo{}, f.defaultInformer)
+	return f.factory.InformerFor(&templatescontroller_experimental.InstanceTemplate{}, f.defaultInformer)
 }
 
 func (f *fooInformer) Lister() experimental.FooLister {

@@ -34,23 +34,23 @@ type FakeFoos struct {
 
 var foosResource = schema.GroupVersionResource{Group: "templates.servicecatalog.k8s.io", Version: "experimental", Resource: "foos"}
 
-var foosKind = schema.GroupVersionKind{Group: "templates.servicecatalog.k8s.io", Version: "experimental", Kind: "Foo"}
+var foosKind = schema.GroupVersionKind{Group: "templates.servicecatalog.k8s.io", Version: "experimental", Kind: "InstanceTemplate"}
 
 // Get takes name of the foo, and returns the corresponding foo object, and an error if there is any.
-func (c *FakeFoos) Get(name string, options v1.GetOptions) (result *experimental.Foo, err error) {
+func (c *FakeFoos) Get(name string, options v1.GetOptions) (result *experimental.InstanceTemplate, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(foosResource, c.ns, name), &experimental.Foo{})
+		Invokes(testing.NewGetAction(foosResource, c.ns, name), &experimental.InstanceTemplate{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*experimental.Foo), err
+	return obj.(*experimental.InstanceTemplate), err
 }
 
 // List takes label and field selectors, and returns the list of Foos that match those selectors.
-func (c *FakeFoos) List(opts v1.ListOptions) (result *experimental.FooList, err error) {
+func (c *FakeFoos) List(opts v1.ListOptions) (result *experimental.InstanceTemplateList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(foosResource, foosKind, c.ns, opts), &experimental.FooList{})
+		Invokes(testing.NewListAction(foosResource, foosKind, c.ns, opts), &experimental.InstanceTemplateList{})
 
 	if obj == nil {
 		return nil, err
@@ -60,8 +60,8 @@ func (c *FakeFoos) List(opts v1.ListOptions) (result *experimental.FooList, err 
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &experimental.FooList{}
-	for _, item := range obj.(*experimental.FooList).Items {
+	list := &experimental.InstanceTemplateList{}
+	for _, item := range obj.(*experimental.InstanceTemplateList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -77,31 +77,31 @@ func (c *FakeFoos) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a foo and creates it.  Returns the server's representation of the foo, and an error, if there is any.
-func (c *FakeFoos) Create(foo *experimental.Foo) (result *experimental.Foo, err error) {
+func (c *FakeFoos) Create(foo *experimental.InstanceTemplate) (result *experimental.InstanceTemplate, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(foosResource, c.ns, foo), &experimental.Foo{})
+		Invokes(testing.NewCreateAction(foosResource, c.ns, foo), &experimental.InstanceTemplate{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*experimental.Foo), err
+	return obj.(*experimental.InstanceTemplate), err
 }
 
 // Update takes the representation of a foo and updates it. Returns the server's representation of the foo, and an error, if there is any.
-func (c *FakeFoos) Update(foo *experimental.Foo) (result *experimental.Foo, err error) {
+func (c *FakeFoos) Update(foo *experimental.InstanceTemplate) (result *experimental.InstanceTemplate, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(foosResource, c.ns, foo), &experimental.Foo{})
+		Invokes(testing.NewUpdateAction(foosResource, c.ns, foo), &experimental.InstanceTemplate{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*experimental.Foo), err
+	return obj.(*experimental.InstanceTemplate), err
 }
 
 // Delete takes name of the foo and deletes it. Returns an error if one occurs.
 func (c *FakeFoos) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(foosResource, c.ns, name), &experimental.Foo{})
+		Invokes(testing.NewDeleteAction(foosResource, c.ns, name), &experimental.InstanceTemplate{})
 
 	return err
 }
@@ -110,17 +110,17 @@ func (c *FakeFoos) Delete(name string, options *v1.DeleteOptions) error {
 func (c *FakeFoos) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(foosResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &experimental.FooList{})
+	_, err := c.Fake.Invokes(action, &experimental.InstanceTemplateList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched foo.
-func (c *FakeFoos) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *experimental.Foo, err error) {
+func (c *FakeFoos) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *experimental.InstanceTemplate, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(foosResource, c.ns, name, data, subresources...), &experimental.Foo{})
+		Invokes(testing.NewPatchSubresourceAction(foosResource, c.ns, name, data, subresources...), &experimental.InstanceTemplate{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*experimental.Foo), err
+	return obj.(*experimental.InstanceTemplate), err
 }

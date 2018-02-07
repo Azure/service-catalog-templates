@@ -2,4 +2,5 @@
 
 set -xeuo pipefail
 
-go build -o bin/service-catalog-templates ./cmd/service-catalog-templates
+./hack/update-codegen.sh
+go build -i -o bin/service-catalog-templates ./cmd/service-catalog-templates
