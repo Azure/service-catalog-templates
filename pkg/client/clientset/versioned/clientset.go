@@ -21,32 +21,32 @@ import (
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
-	samplecontrollerv1alpha1 "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/samplecontroller/v1alpha1"
+	templatescontrollerexperimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templatescontroller/experimental"
 )
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	SamplecontrollerV1alpha1() samplecontrollerv1alpha1.SamplecontrollerV1alpha1Interface
+	Samplecontrollerexperimental() templatescontrollerexperimental.SamplecontrollerexperimentalInterface
 	// Deprecated: please explicitly pick a version if possible.
-	Samplecontroller() samplecontrollerv1alpha1.SamplecontrollerV1alpha1Interface
+	Samplecontroller() templatescontrollerexperimental.SamplecontrollerexperimentalInterface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	samplecontrollerV1alpha1 *samplecontrollerv1alpha1.SamplecontrollerV1alpha1Client
+	templatescontrollerexperimental *templatescontrollerexperimental.SamplecontrollerexperimentalClient
 }
 
-// SamplecontrollerV1alpha1 retrieves the SamplecontrollerV1alpha1Client
-func (c *Clientset) SamplecontrollerV1alpha1() samplecontrollerv1alpha1.SamplecontrollerV1alpha1Interface {
-	return c.samplecontrollerV1alpha1
+// Samplecontrollerexperimental retrieves the SamplecontrollerexperimentalClient
+func (c *Clientset) Samplecontrollerexperimental() templatescontrollerexperimental.SamplecontrollerexperimentalInterface {
+	return c.templatescontrollerexperimental
 }
 
 // Deprecated: Samplecontroller retrieves the default version of SamplecontrollerClient.
 // Please explicitly pick a version.
-func (c *Clientset) Samplecontroller() samplecontrollerv1alpha1.SamplecontrollerV1alpha1Interface {
-	return c.samplecontrollerV1alpha1
+func (c *Clientset) Samplecontroller() templatescontrollerexperimental.SamplecontrollerexperimentalInterface {
+	return c.templatescontrollerexperimental
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -65,7 +65,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.samplecontrollerV1alpha1, err = samplecontrollerv1alpha1.NewForConfig(&configShallowCopy)
+	cs.templatescontrollerexperimental, err = templatescontrollerexperimental.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.samplecontrollerV1alpha1 = samplecontrollerv1alpha1.NewForConfigOrDie(c)
+	cs.templatescontrollerexperimental = templatescontrollerexperimental.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -91,7 +91,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.samplecontrollerV1alpha1 = samplecontrollerv1alpha1.New(c)
+	cs.templatescontrollerexperimental = templatescontrollerexperimental.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

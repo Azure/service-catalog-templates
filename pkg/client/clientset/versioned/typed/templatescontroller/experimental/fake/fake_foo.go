@@ -23,34 +23,34 @@ import (
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
-	v1alpha1 "github.com/Azure/service-catalog-templates/pkg/apis/samplecontroller/v1alpha1"
+	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
 )
 
 // FakeFoos implements FooInterface
 type FakeFoos struct {
-	Fake *FakeSamplecontrollerV1alpha1
+	Fake *FakeSamplecontrollerexperimental
 	ns   string
 }
 
-var foosResource = schema.GroupVersionResource{Group: "templates.servicecatalog.k8s.io", Version: "v1alpha1", Resource: "foos"}
+var foosResource = schema.GroupVersionResource{Group: "templates.servicecatalog.k8s.io", Version: "experimental", Resource: "foos"}
 
-var foosKind = schema.GroupVersionKind{Group: "templates.servicecatalog.k8s.io", Version: "v1alpha1", Kind: "Foo"}
+var foosKind = schema.GroupVersionKind{Group: "templates.servicecatalog.k8s.io", Version: "experimental", Kind: "Foo"}
 
 // Get takes name of the foo, and returns the corresponding foo object, and an error if there is any.
-func (c *FakeFoos) Get(name string, options v1.GetOptions) (result *v1alpha1.Foo, err error) {
+func (c *FakeFoos) Get(name string, options v1.GetOptions) (result *experimental.Foo, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(foosResource, c.ns, name), &v1alpha1.Foo{})
+		Invokes(testing.NewGetAction(foosResource, c.ns, name), &experimental.Foo{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1alpha1.Foo), err
+	return obj.(*experimental.Foo), err
 }
 
 // List takes label and field selectors, and returns the list of Foos that match those selectors.
-func (c *FakeFoos) List(opts v1.ListOptions) (result *v1alpha1.FooList, err error) {
+func (c *FakeFoos) List(opts v1.ListOptions) (result *experimental.FooList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(foosResource, foosKind, c.ns, opts), &v1alpha1.FooList{})
+		Invokes(testing.NewListAction(foosResource, foosKind, c.ns, opts), &experimental.FooList{})
 
 	if obj == nil {
 		return nil, err
@@ -60,8 +60,8 @@ func (c *FakeFoos) List(opts v1.ListOptions) (result *v1alpha1.FooList, err erro
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1alpha1.FooList{}
-	for _, item := range obj.(*v1alpha1.FooList).Items {
+	list := &experimental.FooList{}
+	for _, item := range obj.(*experimental.FooList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -77,31 +77,31 @@ func (c *FakeFoos) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a foo and creates it.  Returns the server's representation of the foo, and an error, if there is any.
-func (c *FakeFoos) Create(foo *v1alpha1.Foo) (result *v1alpha1.Foo, err error) {
+func (c *FakeFoos) Create(foo *experimental.Foo) (result *experimental.Foo, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(foosResource, c.ns, foo), &v1alpha1.Foo{})
+		Invokes(testing.NewCreateAction(foosResource, c.ns, foo), &experimental.Foo{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1alpha1.Foo), err
+	return obj.(*experimental.Foo), err
 }
 
 // Update takes the representation of a foo and updates it. Returns the server's representation of the foo, and an error, if there is any.
-func (c *FakeFoos) Update(foo *v1alpha1.Foo) (result *v1alpha1.Foo, err error) {
+func (c *FakeFoos) Update(foo *experimental.Foo) (result *experimental.Foo, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(foosResource, c.ns, foo), &v1alpha1.Foo{})
+		Invokes(testing.NewUpdateAction(foosResource, c.ns, foo), &experimental.Foo{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1alpha1.Foo), err
+	return obj.(*experimental.Foo), err
 }
 
 // Delete takes name of the foo and deletes it. Returns an error if one occurs.
 func (c *FakeFoos) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(foosResource, c.ns, name), &v1alpha1.Foo{})
+		Invokes(testing.NewDeleteAction(foosResource, c.ns, name), &experimental.Foo{})
 
 	return err
 }
@@ -110,17 +110,17 @@ func (c *FakeFoos) Delete(name string, options *v1.DeleteOptions) error {
 func (c *FakeFoos) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(foosResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &v1alpha1.FooList{})
+	_, err := c.Fake.Invokes(action, &experimental.FooList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched foo.
-func (c *FakeFoos) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Foo, err error) {
+func (c *FakeFoos) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *experimental.Foo, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(foosResource, c.ns, name, data, subresources...), &v1alpha1.Foo{})
+		Invokes(testing.NewPatchSubresourceAction(foosResource, c.ns, name, data, subresources...), &experimental.Foo{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1alpha1.Foo), err
+	return obj.(*experimental.Foo), err
 }

@@ -23,8 +23,8 @@ import (
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/testing"
 	clientset "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
-	samplecontrollerv1alpha1 "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/samplecontroller/v1alpha1"
-	fakesamplecontrollerv1alpha1 "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/samplecontroller/v1alpha1/fake"
+	templatescontrollerexperimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templatescontroller/experimental"
+	faketemplatescontrollerexperimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templatescontroller/experimental/fake"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.
@@ -68,12 +68,12 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// SamplecontrollerV1alpha1 retrieves the SamplecontrollerV1alpha1Client
-func (c *Clientset) SamplecontrollerV1alpha1() samplecontrollerv1alpha1.SamplecontrollerV1alpha1Interface {
-	return &fakesamplecontrollerv1alpha1.FakeSamplecontrollerV1alpha1{Fake: &c.Fake}
+// Samplecontrollerexperimental retrieves the SamplecontrollerexperimentalClient
+func (c *Clientset) Samplecontrollerexperimental() templatescontrollerexperimental.SamplecontrollerexperimentalInterface {
+	return &faketemplatescontrollerexperimental.FakeSamplecontrollerexperimental{Fake: &c.Fake}
 }
 
-// Samplecontroller retrieves the SamplecontrollerV1alpha1Client
-func (c *Clientset) Samplecontroller() samplecontrollerv1alpha1.SamplecontrollerV1alpha1Interface {
-	return &fakesamplecontrollerv1alpha1.FakeSamplecontrollerV1alpha1{Fake: &c.Fake}
+// Samplecontroller retrieves the SamplecontrollerexperimentalClient
+func (c *Clientset) Samplecontroller() templatescontrollerexperimental.SamplecontrollerexperimentalInterface {
+	return &faketemplatescontrollerexperimental.FakeSamplecontrollerexperimental{Fake: &c.Fake}
 }

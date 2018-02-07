@@ -21,7 +21,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
-	samplecontrollerv1alpha1 "github.com/Azure/service-catalog-templates/pkg/apis/samplecontroller/v1alpha1"
+	templatescontrollerexperimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
 )
 
 var scheme = runtime.NewScheme()
@@ -48,5 +48,5 @@ func init() {
 // After this, RawExtensions in Kubernetes types will serialize kube-aggregator types
 // correctly.
 func AddToScheme(scheme *runtime.Scheme) {
-	samplecontrollerv1alpha1.AddToScheme(scheme)
+	templatescontrollerexperimental.AddToScheme(scheme)
 }

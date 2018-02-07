@@ -21,11 +21,11 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	samplev1alpha1 "github.com/Azure/service-catalog-templates/pkg/apis/samplecontroller/v1alpha1"
+	sampleexperimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
 	clientset "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	samplescheme "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
 	informers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
-	listers "github.com/Azure/service-catalog-templates/pkg/client/listers/samplecontroller/v1alpha1"
+	listers "github.com/Azure/service-catalog-templates/pkg/client/listers/templatescontroller/experimental"
 )
 
 const controllerAgentName = "service-catalog-templates"
@@ -78,11 +78,11 @@ func NewController(
 	// obtain references to shared index informers for the Deployment and Foo
 	// types.
 	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
-	fooInformer := sampleInformerFactory.Samplecontroller().V1alpha1().Foos()
+	fooInformer := sampleInformerFactory.Samplecontroller().Experimental().Foos()
 
 	// Create event broadcaster
-	// Add sample-controller types to the default Kubernetes Scheme so Events can be
-	// logged for sample-controller types.
+	// Add service-catalog-templates-controller types to the default Kubernetes Scheme so Events can be
+	// logged for service-catalog-templates-controller types.
 	samplescheme.AddToScheme(scheme.Scheme)
 	glog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
@@ -305,7 +305,7 @@ func (c *Controller) syncHandler(key string) error {
 	return nil
 }
 
-func (c *Controller) updateFooStatus(foo *samplev1alpha1.Foo, deployment *appsv1.Deployment) error {
+func (c *Controller) updateFooStatus(foo *sampleexperimental.Foo, deployment *appsv1.Deployment) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
@@ -315,7 +315,7 @@ func (c *Controller) updateFooStatus(foo *samplev1alpha1.Foo, deployment *appsv1
 	// update the Status block of the Foo resource. UpdateStatus will not
 	// allow changes to the Spec of the resource, which is ideal for ensuring
 	// nothing other than resource status has been updated.
-	_, err := c.sampleclientset.SamplecontrollerV1alpha1().Foos(foo.Namespace).Update(fooCopy)
+	_, err := c.sampleclientset.Samplecontrollerexperimental().Foos(foo.Namespace).Update(fooCopy)
 	return err
 }
 
@@ -375,7 +375,7 @@ func (c *Controller) handleObject(obj interface{}) {
 // newDeployment creates a new Deployment for a Foo resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the Foo resource that 'owns' it.
-func newDeployment(foo *samplev1alpha1.Foo) *appsv1.Deployment {
+func newDeployment(foo *sampleexperimental.Foo) *appsv1.Deployment {
 	labels := map[string]string{
 		"app":        "nginx",
 		"controller": foo.Name,
@@ -386,8 +386,8 @@ func newDeployment(foo *samplev1alpha1.Foo) *appsv1.Deployment {
 			Namespace: foo.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(foo, schema.GroupVersionKind{
-					Group:   samplev1alpha1.SchemeGroupVersion.Group,
-					Version: samplev1alpha1.SchemeGroupVersion.Version,
+					Group:   sampleexperimental.SchemeGroupVersion.Group,
+					Version: sampleexperimental.SchemeGroupVersion.Version,
 					Kind:    "Foo",
 				}),
 			},

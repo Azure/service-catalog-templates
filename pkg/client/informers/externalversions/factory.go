@@ -29,7 +29,7 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 	versioned "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/internalinterfaces"
-	samplecontroller "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/samplecontroller"
+	templatescontroller "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/templatescontroller"
 )
 
 type sharedInformerFactory struct {
@@ -123,9 +123,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Samplecontroller() samplecontroller.Interface
+	Samplecontroller() templatescontroller.Interface
 }
 
-func (f *sharedInformerFactory) Samplecontroller() samplecontroller.Interface {
-	return samplecontroller.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Samplecontroller() templatescontroller.Interface {
+	return templatescontroller.New(f, f.namespace, f.tweakListOptions)
 }

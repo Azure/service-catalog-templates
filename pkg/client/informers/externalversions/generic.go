@@ -23,7 +23,7 @@ import (
 
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
-	v1alpha1 "github.com/Azure/service-catalog-templates/pkg/apis/samplecontroller/v1alpha1"
+	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
 )
 
 // GenericInformer is type of SharedIndexInformer which will locate and delegate to other
@@ -52,9 +52,10 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=templates.servicecatalog.k8s.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("foos"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Samplecontroller().V1alpha1().Foos().Informer()}, nil
+	// Group=templates.servicecatalog.k8s.io, Version=experimental
+	case experimental.SchemeGroupVersion.WithResource("foos"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Samplecontroller().Experimental().
+			Foos().Informer()}, nil
 
 	}
 

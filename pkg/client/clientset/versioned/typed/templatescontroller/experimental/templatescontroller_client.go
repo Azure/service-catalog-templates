@@ -14,31 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package experimental
 
 import (
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
-	v1alpha1 "github.com/Azure/service-catalog-templates/pkg/apis/samplecontroller/v1alpha1"
+	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
 	"github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
 )
 
-type SamplecontrollerV1alpha1Interface interface {
+type SamplecontrollerexperimentalInterface interface {
 	RESTClient() rest.Interface
 	FoosGetter
 }
 
-// SamplecontrollerV1alpha1Client is used to interact with features provided by the templates.servicecatalog.k8s.io group.
-type SamplecontrollerV1alpha1Client struct {
+// SamplecontrollerexperimentalClient is used to interact with features provided by the templates.servicecatalog.k8s.io group.
+type SamplecontrollerexperimentalClient struct {
 	restClient rest.Interface
 }
 
-func (c *SamplecontrollerV1alpha1Client) Foos(namespace string) FooInterface {
+func (c *SamplecontrollerexperimentalClient) Foos(namespace string) FooInterface {
 	return newFoos(c, namespace)
 }
 
-// NewForConfig creates a new SamplecontrollerV1alpha1Client for the given config.
-func NewForConfig(c *rest.Config) (*SamplecontrollerV1alpha1Client, error) {
+// NewForConfig creates a new SamplecontrollerexperimentalClient for the given config.
+func NewForConfig(c *rest.Config) (*SamplecontrollerexperimentalClient, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -47,12 +47,12 @@ func NewForConfig(c *rest.Config) (*SamplecontrollerV1alpha1Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SamplecontrollerV1alpha1Client{client}, nil
+	return &SamplecontrollerexperimentalClient{client}, nil
 }
 
-// NewForConfigOrDie creates a new SamplecontrollerV1alpha1Client for the given config and
+// NewForConfigOrDie creates a new SamplecontrollerexperimentalClient for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *SamplecontrollerV1alpha1Client {
+func NewForConfigOrDie(c *rest.Config) *SamplecontrollerexperimentalClient {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -60,13 +60,13 @@ func NewForConfigOrDie(c *rest.Config) *SamplecontrollerV1alpha1Client {
 	return client
 }
 
-// New creates a new SamplecontrollerV1alpha1Client for the given RESTClient.
-func New(c rest.Interface) *SamplecontrollerV1alpha1Client {
-	return &SamplecontrollerV1alpha1Client{c}
+// New creates a new SamplecontrollerexperimentalClient for the given RESTClient.
+func New(c rest.Interface) *SamplecontrollerexperimentalClient {
+	return &SamplecontrollerexperimentalClient{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
-	gv := v1alpha1.SchemeGroupVersion
+	gv := experimental.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
@@ -80,7 +80,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *SamplecontrollerV1alpha1Client) RESTClient() rest.Interface {
+func (c *SamplecontrollerexperimentalClient) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}
