@@ -7,8 +7,8 @@ import (
 	"github.com/golang/glog"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
-	//_ "k8s.io/client-go/plugin/pkg/client/auth/"
 
 	clientset "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	informers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
