@@ -12,8 +12,8 @@ import (
 
 	clientset "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	informers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
-	"github.com/Azure/service-catalog-templates/pkg/signals"
 	"github.com/Azure/service-catalog-templates/pkg/controller"
+	"github.com/Azure/service-catalog-templates/pkg/signals"
 )
 
 var (

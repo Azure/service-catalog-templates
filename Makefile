@@ -19,9 +19,8 @@ build-image:
 build: build-image
 	$(DO) ./build/build.sh
 
-#run: build-image
-#	$(DO) ./hack/run.sh
-#	$(DO) svcat get brokers
+run: build-image
+	$(DO) ./hack/run.sh
 
 create-cluster:
 	./hack/create-cluster.sh

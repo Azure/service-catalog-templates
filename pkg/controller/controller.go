@@ -51,10 +51,10 @@ type Controller struct {
 	// sampleclientset is a clientset for our own API group
 	sampleclientset clientset.Interface
 
-	deploymentsLister appslisters.DeploymentLister
-	deploymentsSynced cache.InformerSynced
-	foosLister        listers.FooLister
-	foosSynced        cache.InformerSynced
+	deploymentsLister       appslisters.DeploymentLister
+	deploymentsSynced       cache.InformerSynced
+	instanceTemplateLister  listers.InstanceTemplateLister
+	instanceTemplatesSynced cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -77,7 +77,7 @@ func NewController(
 	// obtain references to shared index informers for the Deployment and InstanceTemplate
 	// types.
 	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
-	fooInformer := sampleInformerFactory.Samplecontroller().Experimental().Foos()
+	instanceTemplateInformer := sampleInformerFactory.Templates().Experimental().InstanceTemplates()
 
 	// Create event broadcaster
 	// Add service-catalog-templates-controller types to the default Kubernetes Scheme so Events can be
@@ -90,19 +90,19 @@ func NewController(
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
-		kubeclientset:     kubeclientset,
-		sampleclientset:   sampleclientset,
-		deploymentsLister: deploymentInformer.Lister(),
-		deploymentsSynced: deploymentInformer.Informer().HasSynced,
-		foosLister:        fooInformer.Lister(),
-		foosSynced:        fooInformer.Informer().HasSynced,
-		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Foos"),
-		recorder:          recorder,
+		kubeclientset:           kubeclientset,
+		sampleclientset:         sampleclientset,
+		deploymentsLister:       deploymentInformer.Lister(),
+		deploymentsSynced:       deploymentInformer.Informer().HasSynced,
+		instanceTemplateLister:  instanceTemplateInformer.Lister(),
+		instanceTemplatesSynced: instanceTemplateInformer.Informer().HasSynced,
+		workqueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Foos"),
+		recorder:                recorder,
 	}
 
 	glog.Info("Setting up event handlers")
 	// Set up an event handler for when InstanceTemplate resources change
-	fooInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	instanceTemplateInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueFoo,
 		UpdateFunc: func(old, new interface{}) {
 			controller.enqueueFoo(new)
@@ -141,11 +141,11 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	defer c.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
-	glog.Info("Starting Templates controller")
+	glog.Info("Starting TemplatesController controller")
 
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.deploymentsSynced, c.foosSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.deploymentsSynced, c.instanceTemplatesSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -236,7 +236,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		// Get the InstanceTemplate resource with this namespace/name
-		foo, err := c.foosLister.Foos(namespace).Get(name)
+		foo, err := c.instanceTemplateLister.Foos(namespace).Get(name)
 		if err != nil {
 			// The InstanceTemplate resource may no longer exist, in which case we stop
 			// processing.
@@ -317,7 +317,7 @@ func (c *Controller) updateFooStatus(foo *sampleexperimental.InstanceTemplate, d
 	// update the Status block of the InstanceTemplate resource. UpdateStatus will not
 	// allow changes to the Spec of the resource, which is ideal for ensuring
 	// nothing other than resource status has been updated.
-	_, err := c.sampleclientset.Samplecontrollerexperimental().Foos(foo.Namespace).Update(fooCopy)
+	_, err := c.sampleclientset.TemplatesExperimental().InstanceTemplates(foo.Namespace).Update(fooCopy)
 	return err
 }
 
@@ -363,7 +363,7 @@ func (c *Controller) handleObject(obj interface{}) {
 			return
 		}
 
-		foo, err := c.foosLister.Foos(object.GetNamespace()).Get(ownerRef.Name)
+		foo, err := c.instanceTemplateLister.InstanceTemplates(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
 			glog.V(4).Infof("ignoring orphaned object '%s' of foo '%s'", object.GetSelfLink(), ownerRef.Name)
 			return
