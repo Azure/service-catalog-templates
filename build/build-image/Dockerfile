@@ -22,4 +22,9 @@ RUN mv ./kubectl /usr/local/bin/kubectl
 # Install svcat
 RUN go get github.com/kubernetes-incubator/service-catalog/cmd/svcat
 
+# Install dep
+ENV DEP_VERSION=v0.4.1
+RUN curl -sSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && \
+    chmod +x /usr/local/bin/dep
+
 WORKDIR /go/src/github.com/Azure/service-catalog-templates
