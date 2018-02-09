@@ -23,14 +23,20 @@ required = [
   go-tests = true
   unused-packages = true
 
+  #
+  # Don't remove packages used for code generation
+  #
+
   [[prune.project]]
     name = "k8s.io/code-generator"
     unused-packages = false
     non-go = false
-    go-tests = false
 
   [[prune.project]]
     name = "k8s.io/gengo"
     unused-packages = false
     non-go = false
-    go-tests = false
+
+  [[prune.project]]
+    name = "k8s.io/apimachinery"
+    unused-packages=false
