@@ -4,7 +4,7 @@ package templates
 
 import (
 	internalinterfaces "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/internalinterfaces"
-	experimental "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/templatescontroller/experimental"
+	experimental "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/templates/experimental"
 )
 
 // Interface provides access to each of this group's versions.

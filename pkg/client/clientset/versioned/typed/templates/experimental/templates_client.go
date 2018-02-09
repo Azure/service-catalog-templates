@@ -1,7 +1,7 @@
 package experimental
 
 import (
-	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
+	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 	"github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"

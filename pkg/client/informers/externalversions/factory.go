@@ -9,7 +9,7 @@ import (
 
 	versioned "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/internalinterfaces"
-	templatescontroller "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/templatescontroller"
+	templates "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/templates"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -107,9 +107,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Templates() templatescontroller.Interface
+	Templates() templates.Interface
 }
 
-func (f *sharedInformerFactory) Templates() templatescontroller.Interface {
-	return templatescontroller.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Templates() templates.Interface {
+	return templates.New(f, f.namespace, f.tweakListOptions)
 }

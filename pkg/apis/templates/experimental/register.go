@@ -21,11 +21,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	templatescontroller "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller"
+	templates "github.com/Azure/service-catalog-templates/pkg/apis/templates"
 )
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: templatescontroller.GroupName, Version: "experimental"}
+var SchemeGroupVersion = schema.GroupVersion{Group: templates.GroupName, Version: "experimental"}
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {

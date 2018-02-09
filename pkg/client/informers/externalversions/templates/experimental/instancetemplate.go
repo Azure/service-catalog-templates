@@ -5,10 +5,10 @@ package experimental
 import (
 	time "time"
 
-	templatescontroller_experimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
+	templates_experimental "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 	versioned "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/internalinterfaces"
-	experimental "github.com/Azure/service-catalog-templates/pkg/client/listers/templatescontroller/experimental"
+	experimental "github.com/Azure/service-catalog-templates/pkg/client/listers/templates/experimental"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -54,7 +54,7 @@ func NewFilteredInstanceTemplateInformer(client versioned.Interface, namespace s
 				return client.TemplatesExperimental().InstanceTemplates(namespace).Watch(options)
 			},
 		},
-		&templatescontroller_experimental.InstanceTemplate{},
+		&templates_experimental.InstanceTemplate{},
 		resyncPeriod,
 		indexers,
 	)
@@ -65,7 +65,7 @@ func (f *instanceTemplateInformer) defaultInformer(client versioned.Interface, r
 }
 
 func (f *instanceTemplateInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&templatescontroller_experimental.InstanceTemplate{}, f.defaultInformer)
+	return f.factory.InformerFor(&templates_experimental.InstanceTemplate{}, f.defaultInformer)
 }
 
 func (f *instanceTemplateInformer) Lister() experimental.InstanceTemplateLister {

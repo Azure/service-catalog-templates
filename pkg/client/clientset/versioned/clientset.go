@@ -1,7 +1,7 @@
 package versioned
 
 import (
-	templatesexperimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templatescontroller/experimental"
+	templatesexperimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templates/experimental"
 	glog "github.com/golang/glog"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"

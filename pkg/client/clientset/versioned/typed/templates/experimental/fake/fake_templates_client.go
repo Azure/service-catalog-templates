@@ -1,7 +1,7 @@
 package fake
 
 import (
-	experimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templatescontroller/experimental"
+	experimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templates/experimental"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

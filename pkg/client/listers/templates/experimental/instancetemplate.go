@@ -3,7 +3,7 @@
 package experimental
 
 import (
-	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
+	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"

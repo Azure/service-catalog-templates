@@ -1,7 +1,7 @@
 package fake
 
 import (
-	templatesexperimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
+	templatesexperimental "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

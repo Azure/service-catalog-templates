@@ -20,11 +20,11 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	sampleexperimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
+	sampleexperimental "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 	clientset "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	samplescheme "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
 	informers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
-	listers "github.com/Azure/service-catalog-templates/pkg/client/listers/templatescontroller/experimental"
+	listers "github.com/Azure/service-catalog-templates/pkg/client/listers/templates/experimental"
 )
 
 const controllerAgentName = "service-catalog-templates"
@@ -141,7 +141,7 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	defer c.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
-	glog.Info("Starting TemplatesController controller")
+	glog.Info("Starting Templates controller")
 
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")

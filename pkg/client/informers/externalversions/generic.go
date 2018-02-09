@@ -5,7 +5,7 @@ package externalversions
 import (
 	"fmt"
 
-	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
+	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )

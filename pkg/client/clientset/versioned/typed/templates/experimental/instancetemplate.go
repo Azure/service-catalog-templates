@@ -1,7 +1,7 @@
 package experimental
 
 import (
-	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templatescontroller/experimental"
+	experimental "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 	scheme "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"

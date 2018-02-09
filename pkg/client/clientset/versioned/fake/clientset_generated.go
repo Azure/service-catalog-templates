@@ -2,8 +2,8 @@ package fake
 
 import (
 	clientset "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
-	templatesexperimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templatescontroller/experimental"
-	faketemplatesexperimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templatescontroller/experimental/fake"
+	templatesexperimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templates/experimental"
+	faketemplatesexperimental "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/typed/templates/experimental/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
