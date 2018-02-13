@@ -18,6 +18,10 @@ required = [
   name = "k8s.io/code-generator"
   version = "kubernetes-1.9.2"
 
+[[constraint]]
+  name = "github.com/kubernetes-incubator/service-catalog"
+  version = "~0.1.7"
+
 [prune]
   non-go = true
   go-tests = true

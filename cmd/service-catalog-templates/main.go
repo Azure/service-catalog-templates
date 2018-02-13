@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
@@ -14,6 +13,8 @@ import (
 	informers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
 	"github.com/Azure/service-catalog-templates/pkg/controller"
 	"github.com/Azure/service-catalog-templates/pkg/signals"
+	svcatclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	svcatinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 )
 
 var (
@@ -37,18 +38,23 @@ func main() {
 		glog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
 
-	exampleClient, err := clientset.NewForConfig(cfg)
+	svcatClient, err := svcatclientset.NewForConfig(cfg)
+	if err != nil {
+		glog.Fatalf("Error building service catalog clientset: %s", err.Error())
+	}
+
+	templatesClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
 		glog.Fatalf("Error building example clientset: %s", err.Error())
 	}
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	exampleInformerFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
+	svcatInformerFactory := svcatinformers.NewSharedInformerFactory(svcatClient, time.Second*30)
+	templatesInformerFactory := informers.NewSharedInformerFactory(templatesClient, time.Second*30)
 
-	controller := controller.NewController(kubeClient, exampleClient, kubeInformerFactory, exampleInformerFactory)
+	controller := controller.NewController(kubeClient, svcatClient, templatesClient, svcatInformerFactory, templatesInformerFactory)
 
-	go kubeInformerFactory.Start(stopCh)
-	go exampleInformerFactory.Start(stopCh)
+	go svcatInformerFactory.Start(stopCh)
+	go templatesInformerFactory.Start(stopCh)
 
 	if err = controller.Run(2, stopCh); err != nil {
 		glog.Fatalf("Error running controller: %s", err.Error())

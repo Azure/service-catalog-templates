@@ -53,3 +53,49 @@ type InstanceTemplateList struct {
 
 	Items []InstanceTemplate `json:"items"`
 }
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// Instance is a specification for a Instance resource
+type Instance struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   InstanceSpec   `json:"spec"`
+	Status InstanceStatus `json:"status"`
+}
+
+// InstanceSpec is the spec for a Instance resource
+type InstanceSpec struct {
+	PlanSelector      metav1.LabelSelector `json:"planSelector,omitempty"`
+	ClassExternalName string               `json:"classExternalName,omitempty"`
+	PlanExternalName  string               `json:"planExternalName,omitempty"`
+}
+
+// InstanceStatus is the status for a Instance resource
+type InstanceStatus struct {
+	ResolvedClass ObjectReference `json:"resolvedClass"`
+	ResolvedPlan  ObjectReference `json:"resolvedPlan"`
+	// TODO: parameters
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// InstanceList is a list of Instance resources
+type InstanceList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []Instance `json:"items"`
+}
+
+// ClusterObjectReference contains enough information to let you locate the
+// cluster-scoped referenced object.
+type ObjectReference struct {
+	// Name of the referent.
+	Name string
+	// Namespace of the referent. Optional for cluster scoped resources.
+	//Namespace string
+}
