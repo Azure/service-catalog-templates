@@ -26,12 +26,12 @@ spec:
       properties:
         spec:
           required:
-          - clusterServiceClassExternalName
-          - clusterServicePlanExternalName
+          - classExternalName
+          - planExternalName
           properties:
-            clusterServiceClassExternalName:
+            classExternalName:
               type: string
-            clusterServicePlanExternalName:
+            planExternalName:
               type: string
             parameters:
               type: object

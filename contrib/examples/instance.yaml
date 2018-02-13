@@ -1,7 +1,7 @@
 apiVersion: templates.servicecatalog.k8s.io/experimental
-kind: InstanceTemplate
+kind: Instance
 metadata:
-  name: cheap-mysldb-by-default
+  name: test-mysqldb
   namespace: default
   labels:
     type: mysqldb

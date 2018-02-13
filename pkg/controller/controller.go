@@ -81,7 +81,7 @@ func NewController(
 	// obtain references to shared index informers for the Deployment and Instance
 	// types.
 	instanceInformer := templatesInformerFactory.Templates().Experimental().Instances()
-	svcatInformer := svcatInformerFactory.Servicecatalog().V1beta1().ServiceInstances()
+	svcatInstanceInformer := svcatInformerFactory.Servicecatalog().V1beta1().ServiceInstances()
 
 	// Create event broadcaster
 	// Add service-catalog-templates-controller types to the default Kubernetes Scheme so Events can be
@@ -94,12 +94,15 @@ func NewController(
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
-		kubeClient:      kubeClient,
-		templatesClient: templatesClient,
-		instancesLister: instanceInformer.Lister(),
-		instancesSynced: instanceInformer.Informer().HasSynced,
-		workqueue:       workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Instances"),
-		recorder:        recorder,
+		kubeClient:           kubeClient,
+		svcatClient:          svcatClient,
+		templatesClient:      templatesClient,
+		instancesLister:      instanceInformer.Lister(),
+		svcatInstancesLister: svcatInstanceInformer.Lister(),
+		instancesSynced:      instanceInformer.Informer().HasSynced,
+		svcatInstancesSynced: svcatInstanceInformer.Informer().HasSynced,
+		workqueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Instances"),
+		recorder:             recorder,
 	}
 
 	glog.Info("Setting up event handlers")
@@ -116,7 +119,7 @@ func NewController(
 	// processing. This way, we don't need to implement custom logic for
 	// handling Deployment resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
-	svcatInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	svcatInstanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
 		UpdateFunc: func(old, new interface{}) {
 			newInst := new.(*svcatv1beta1.ServiceInstance)
@@ -391,6 +394,12 @@ func newInstance(inst *tempmlatesExperimental.Instance) *svcatv1beta1.ServiceIns
 					Version: tempmlatesExperimental.SchemeGroupVersion.Version,
 					Kind:    "Instance",
 				}),
+			},
+		},
+		Spec: svcatv1beta1.ServiceInstanceSpec{
+			PlanReference: svcatv1beta1.PlanReference{
+				ClusterServiceClassExternalName: inst.Spec.ClassExternalName,
+				ClusterServicePlanExternalName:  inst.Spec.PlanExternalName,
 			},
 		},
 	}
