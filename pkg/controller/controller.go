@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Azure/service-catalog-templates/pkg/svcatt"
 	"github.com/golang/glog"
-	svcatv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -18,15 +16,16 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	tempmlatesExperimental "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 	clientset "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	samplescheme "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
 	informers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
 	listers "github.com/Azure/service-catalog-templates/pkg/client/listers/templates/experimental"
+	svcatv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	svcatclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	svcatinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	svcatlisters "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const controllerAgentName = "service-catalog-templates"
@@ -58,6 +57,8 @@ type Controller struct {
 
 	svcatInstancesLister svcatlisters.ServiceInstanceLister
 	svcatInstancesSynced cache.InformerSynced
+
+	synchronizer *svcatt.Synchronizer
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -95,6 +96,7 @@ func NewController(
 
 	controller := &Controller{
 		kubeClient:           kubeClient,
+		synchronizer:         svcatt.NewSynchronizer(templatesClient, svcatClient, instanceInformer.Lister(), svcatInstanceInformer.Lister()),
 		svcatClient:          svcatClient,
 		templatesClient:      templatesClient,
 		instancesLister:      instanceInformer.Lister(),
@@ -232,99 +234,22 @@ func (c *Controller) processNextWorkItem() bool {
 // converge the two. It then updates the Status block of the Instance resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(key string) error {
-
-	// Convert the namespace/name string into a distinct namespace and name
-	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	ok, instance, err := c.synchronizer.SynchronizeInstance(key)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("invalid resource key: %s", key))
-		return nil
-	}
-
-	// Get the Instance resource with this namespace/name
-	inst, err := c.instancesLister.Instances(namespace).Get(name)
-	if err != nil {
-		// The Instance resource may no longer exist, in which case we stop
-		// processing.
-		if errors.IsNotFound(err) {
-			runtime.HandleError(fmt.Errorf("instance '%s' in work queue no longer exists", key))
-			return nil
+		// Append a warning to the instance
+		if instance != nil {
+			c.recorder.Event(instance, corev1.EventTypeWarning, ErrResourceExists, err.Error())
 		}
-
 		return err
 	}
 
-	instanceName := inst.Name
-	if instanceName == "" {
-		// We choose to absorb the error here as the worker would requeue the
-		// resource otherwise. Instead, the next time the resource is updated
-		// the resource will be queued again.
-		runtime.HandleError(fmt.Errorf("%s: instance name must be specified", key))
-		return nil
+	// Record a successful sync
+	//
+	if ok {
+		c.recorder.Event(instance, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	}
-
-	// Get the deployment with the name specified in Instance.spec
-	svcInst, err := c.svcatInstancesLister.ServiceInstances(inst.Namespace).Get(instanceName)
-	// If the resource doesn't exist, we'll create it
-	if errors.IsNotFound(err) {
-		svcInst, err = c.svcatClient.ServicecatalogV1beta1().ServiceInstances(inst.Namespace).Create(newInstance(inst))
-	}
-
-	// If an error occurs during Get/Create, we'll requeue the item so we can
-	// attempt processing again later. This could have been caused by a
-	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
-	}
-
-	// If the Deployment is not controlled by this Instance resource, we should log
-	// a warning to the event recorder and ret
-	if !metav1.IsControlledBy(svcInst, inst) {
-		msg := fmt.Sprintf(MessageResourceExists, svcInst.Name)
-		c.recorder.Event(inst, corev1.EventTypeWarning, ErrResourceExists, msg)
-		return fmt.Errorf(msg)
-	}
-
-	/*
-		// If this number of the replicas on the Instance resource is specified, and the
-		// number does not equal the current desired replicas on the Deployment, we
-		// should update the Deployment resource.
-		if foo.Spec.Replicas != nil && *foo.Spec.Replicas != *deployment.Spec.Replicas {
-			glog.V(4).Infof("Instance %s replicas: %d, deployment replicas: %d", name, *foo.Spec.Replicas, *deployment.Spec.Replicas)
-			deployment, err = c.kubeClient.AppsV1().Deployments(foo.Namespace).Update(newInstance(foo))
-		}
-
-		// If an error occurs during Update, we'll requeue the item so we can
-		// attempt processing again later. THis could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
-			return err
-		}
-	*/
-
-	// Finally, we update the status block of the Instance resource to reflect the
-	// current state of the world
-	err = c.updateInstanceStatus(inst, svcInst)
-	if err != nil {
-		return err
-	}
-
-	c.recorder.Event(inst, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 
 	return nil
-}
-
-func (c *Controller) updateInstanceStatus(inst *tempmlatesExperimental.Instance, svcInst *svcatv1beta1.ServiceInstance) error {
-	// NEVER modify objects from the store. It's a read-only, local cache.
-	// You can use DeepCopy() to make a deep copy of original object and modify this copy
-	// Or create a copy manually for better performance
-	instCopy := inst.DeepCopy()
-	//fooCopy.Status.Message = deployment.Status.Message
-	// Until #38113 is merged, we must use Update instead of UpdateStatus to
-	// update the Status block of the Instance resource. UpdateStatus will not
-	// allow changes to the Spec of the resource, which is ideal for ensuring
-	// nothing other than resource status has been updated.
-	_, err := c.templatesClient.TemplatesExperimental().Instances(inst.Namespace).Update(instCopy)
-	return err
 }
 
 // enqueueInstance takes a Instance resource and converts it into a namespace/name
@@ -377,30 +302,5 @@ func (c *Controller) handleObject(obj interface{}) {
 
 		c.enqueueInstance(inst)
 		return
-	}
-}
-
-// newDeployment creates a new Deployment for a Instance resource. It also sets
-// the appropriate OwnerReferences on the resource so handleObject can discover
-// the Instance resource that 'owns' it.
-func newInstance(inst *tempmlatesExperimental.Instance) *svcatv1beta1.ServiceInstance {
-	return &svcatv1beta1.ServiceInstance{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      inst.Name,
-			Namespace: inst.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(inst, schema.GroupVersionKind{
-					Group:   tempmlatesExperimental.SchemeGroupVersion.Group,
-					Version: tempmlatesExperimental.SchemeGroupVersion.Version,
-					Kind:    "Instance",
-				}),
-			},
-		},
-		Spec: svcatv1beta1.ServiceInstanceSpec{
-			PlanReference: svcatv1beta1.PlanReference{
-				ClusterServiceClassExternalName: inst.Spec.ClassExternalName,
-				ClusterServicePlanExternalName:  inst.Spec.PlanExternalName,
-			},
-		},
 	}
 }
