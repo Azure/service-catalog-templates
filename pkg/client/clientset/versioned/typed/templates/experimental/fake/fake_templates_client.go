@@ -10,6 +10,10 @@ type FakeTemplatesExperimental struct {
 	*testing.Fake
 }
 
+func (c *FakeTemplatesExperimental) Instances(namespace string) experimental.InstanceInterface {
+	return &FakeInstances{c, namespace}
+}
+
 func (c *FakeTemplatesExperimental) InstanceTemplates(namespace string) experimental.InstanceTemplateInterface {
 	return &FakeInstanceTemplates{c, namespace}
 }

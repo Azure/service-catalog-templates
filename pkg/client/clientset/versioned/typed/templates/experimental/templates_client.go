@@ -9,12 +9,17 @@ import (
 
 type TemplatesExperimentalInterface interface {
 	RESTClient() rest.Interface
+	InstancesGetter
 	InstanceTemplatesGetter
 }
 
 // TemplatesExperimentalClient is used to interact with features provided by the templates.servicecatalog.k8s.io group.
 type TemplatesExperimentalClient struct {
 	restClient rest.Interface
+}
+
+func (c *TemplatesExperimentalClient) Instances(namespace string) InstanceInterface {
+	return newInstances(c, namespace)
 }
 
 func (c *TemplatesExperimentalClient) InstanceTemplates(namespace string) InstanceTemplateInterface {

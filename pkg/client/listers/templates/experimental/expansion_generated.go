@@ -2,6 +2,14 @@
 
 package experimental
 
+// InstanceListerExpansion allows custom methods to be added to
+// InstanceLister.
+type InstanceListerExpansion interface{}
+
+// InstanceNamespaceListerExpansion allows custom methods to be added to
+// InstanceNamespaceLister.
+type InstanceNamespaceListerExpansion interface{}
+
 // InstanceTemplateListerExpansion allows custom methods to be added to
 // InstanceTemplateLister.
 type InstanceTemplateListerExpansion interface{}
