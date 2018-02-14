@@ -27,7 +27,10 @@ func BuildServiceInstance(instance *templates.Instance, template *templates.Inst
 				ClusterServiceClassExternalName: instance.Spec.ClassExternalName,
 				ClusterServicePlanExternalName:  instance.Spec.PlanExternalName,
 			},
-			// TODO: Copy parameters and remaining values
+			Parameters:     instance.Spec.Parameters, // TODO: Figure out if these need deep copies
+			ParametersFrom: instance.Spec.ParametersFrom,
+			ExternalID:     instance.Spec.ExternalID,
+			UpdateRequests: instance.Spec.UpdateRequests,
 		},
 	}
 }

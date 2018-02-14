@@ -20,3 +20,17 @@ spec:
     # shortNames allow shorter string to match your resource on the CLI
     shortNames:
     - inst
+  validation:
+    # See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            planSelector:
+              type: object
+            classExternalName:
+              type: string
+            planExternalName:
+              type: string
+            parameters:
+              type: object

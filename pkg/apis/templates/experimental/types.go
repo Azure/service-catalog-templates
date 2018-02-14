@@ -21,6 +21,9 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+
+	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 var (
@@ -76,9 +79,27 @@ type Instance struct {
 
 // InstanceSpec is the spec for a Instance resource
 type InstanceSpec struct {
-	PlanSelector      metav1.LabelSelector `json:"planSelector,omitempty"`
-	ClassExternalName string               `json:"classExternalName,omitempty"`
-	PlanExternalName  string               `json:"planExternalName,omitempty"`
+	// +optional
+	PlanSelector metav1.LabelSelector `json:"planSelector,omitempty"`
+
+	// +optional
+	ClassExternalName string `json:"classExternalName,omitempty"`
+
+	// +optional
+	PlanExternalName string `json:"planExternalName,omitempty"`
+
+	// +optional
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// +optional
+	ParametersFrom []svcat.ParametersFromSource `json:"parametersFrom,omitempty"`
+
+	// Immutable.
+	// +optional
+	ExternalID string `json:"externalID"`
+
+	// +optional
+	UpdateRequests int64 `json:"updateRequests"`
 }
 
 // InstanceStatus is the status for a Instance resource
@@ -102,7 +123,9 @@ type InstanceList struct {
 // cluster-scoped referenced object.
 type ObjectReference struct {
 	// Name of the referent.
-	Name string
+	Name string `json:"name"`
+
 	// Namespace of the referent. Optional for cluster scoped resources.
-	//Namespace string
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
 }
