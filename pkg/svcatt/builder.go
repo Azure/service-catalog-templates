@@ -10,6 +10,8 @@ import (
 )
 
 func BuildServiceInstance(instance *templates.Instance, template *templates.InstanceTemplate) *svcat.ServiceInstance {
+	// TODO: Apply the template
+
 	return &svcat.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name,
@@ -33,4 +35,22 @@ func BuildServiceInstance(instance *templates.Instance, template *templates.Inst
 			UpdateRequests: instance.Spec.UpdateRequests,
 		},
 	}
+}
+
+func RefreshServiceInstance(inst *templates.Instance, svcInst *svcat.ServiceInstance) *svcat.ServiceInstance {
+	svcInst = svcInst.DeepCopy()
+
+	svcInst.Spec.Parameters = inst.Spec.Parameters
+	svcInst.Spec.ParametersFrom = inst.Spec.ParametersFrom
+	svcInst.Spec.UpdateRequests = inst.Spec.UpdateRequests
+
+	// TODO: Figure out what can be synced, what's immutable
+
+	// TODO: Figure out how to sync resolved values, like plan
+	if inst.Spec.ClassExternalName != "" && inst.Spec.PlanExternalName != "" {
+		svcInst.Spec.ClusterServiceClassExternalName = inst.Spec.ClassExternalName
+		svcInst.Spec.ClusterServicePlanExternalName = inst.Spec.PlanExternalName
+	}
+
+	return svcInst
 }

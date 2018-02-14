@@ -68,7 +68,7 @@ func (s *Synchronizer) IsManagedInstance(object metav1.Object) (bool, *templates
 // * ok - Synchronization was successful.
 // * instance - The instance resource.
 // * error - Fatal synchronization error.
-func (s *Synchronizer) SynchronizeInstance(key string) (retry bool, instance *templates.Instance, err error) {
+func (s *Synchronizer) SynchronizeInstance(key string) (bool, *templates.Instance, error) {
 	//
 	// Get shadow instance
 	//
@@ -128,22 +128,23 @@ func (s *Synchronizer) SynchronizeInstance(key string) (retry bool, instance *te
 		return false, inst, fmt.Errorf(msg)
 	}
 
-	/*
-		// If this number of the replicas on the Instance resource is specified, and the
-		// number does not equal the current desired replicas on the Deployment, we
-		// should update the Deployment resource.
-		if foo.Spec.Replicas != nil && *foo.Spec.Replicas != *deployment.Spec.Replicas {
-			glog.V(4).Infof("Instance %s replicas: %d, deployment replicas: %d", name, *foo.Spec.Replicas, *deployment.Spec.Replicas)
-			deployment, err = c.kubeClient.AppsV1().Deployments(foo.Namespace).Update(newInstance(foo))
-		}
+	// TODO: Detect when the plan must be re-resolved
 
-		// If an error occurs during Update, we'll requeue the item so we can
-		// attempt processing again later. THis could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
-			return err
-		}
-	*/
+	// If this number of the replicas on the Instance resource is specified, and the
+	// number does not equal the current desired replicas on the Deployment, we
+	// should update the Deployment resource.
+	if inst.Spec.Parameters != nil && (svcInst.Spec.Parameters == nil || string(inst.Spec.Parameters.Raw) != string(svcInst.Spec.Parameters.Raw)) {
+		glog.V(4).Infof("Syncing instance %s back to service instance %s", inst.SelfLink, svcInst.SelfLink)
+		svcInst = RefreshServiceInstance(inst, svcInst)
+		svcInst, err = s.svcatClient.ServicecatalogV1beta1().ServiceInstances(svcInst.Namespace).Update(svcInst)
+	}
+
+	// If an error occurs during Update, we'll requeue the item so we can
+	// attempt processing again later. This could have been caused by a
+	// temporary network failure, or any other transient reason.
+	if err != nil {
+		return false, inst, err
+	}
 
 	//
 	// Update shadow instance status with the service instance state
