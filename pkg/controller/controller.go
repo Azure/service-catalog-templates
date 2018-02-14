@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Azure/service-catalog-templates/pkg/svcatt"
 	"github.com/golang/glog"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -16,14 +17,14 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	clientset "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
-	samplescheme "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
-	informers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
-	svcatv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	svcatclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	templatesclient "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
+	templatesscheme "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
+	templatesinformers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
+	"github.com/Azure/service-catalog-templates/pkg/svcatt"
+
+	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	svcatinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const controllerAgentName = "service-catalog-templates"
@@ -63,12 +64,12 @@ type Controller struct {
 // NewController returns a new sample controller
 func NewController(
 	kubeClient kubernetes.Interface,
-	svcatClient svcatclientset.Interface,
-	templatesClient clientset.Interface,
+	svcatClient svcatclient.Interface,
+	templatesClient templatesclient.Interface,
 	svcatInformerFactory svcatinformers.SharedInformerFactory,
-	templatesInformerFactory informers.SharedInformerFactory) *Controller {
+	templatesInformerFactory templatesinformers.SharedInformerFactory) *Controller {
 
-	// obtain references to shared index informers for the Deployment and Instance
+	// obtain references to shared index templatesinformers for the Deployment and Instance
 	// types.
 	instanceInformer := templatesInformerFactory.Templates().Experimental().Instances()
 	svcatInstanceInformer := svcatInformerFactory.Servicecatalog().V1beta1().ServiceInstances()
@@ -76,7 +77,7 @@ func NewController(
 	// Create event broadcaster
 	// Add service-catalog-templates-controller types to the default Kubernetes Scheme so Events can be
 	// logged for service-catalog-templates-controller types.
-	samplescheme.AddToScheme(scheme.Scheme)
+	templatesscheme.AddToScheme(scheme.Scheme)
 	glog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.Infof)
@@ -109,8 +110,8 @@ func NewController(
 	svcatInstanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
 		UpdateFunc: func(old, new interface{}) {
-			newInst := new.(*svcatv1beta1.ServiceInstance)
-			oldInst := old.(*svcatv1beta1.ServiceInstance)
+			newInst := new.(*svcat.ServiceInstance)
+			oldInst := old.(*svcat.ServiceInstance)
 			if newInst.ResourceVersion == oldInst.ResourceVersion {
 				// Periodic resync will send update events for all known instances.
 				// Two different versions of the same instance will always have different RVs.
