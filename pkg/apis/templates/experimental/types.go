@@ -17,7 +17,14 @@ limitations under the License.
 package experimental
 
 import (
+	"fmt"
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	InstanceKind = strings.Split(fmt.Sprintf("%T", Instance{}), ".")[1]
 )
 
 // +genclient

@@ -3,6 +3,7 @@ package svcatt
 import (
 	"fmt"
 
+	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -38,6 +39,28 @@ func NewSynchronizer(templatesClient templatesclient.Interface, svcatClient svca
 		instanceLister:       instanceLister,
 		svcatInstancesLister: svcatInstancesLister,
 	}
+}
+
+// IsManagedInstance determines if a resource is managed by a shadow instance.
+func (s *Synchronizer) IsManagedInstance(object metav1.Object) (bool, *templates.Instance) {
+	owner := metav1.GetControllerOf(object)
+	if owner == nil {
+		return false, nil
+	}
+
+	// Ignore unmanaged service catalog instances
+	if owner.Kind != templates.InstanceKind {
+		return false, nil
+	}
+
+	// Try to retrieve the instance that is shadowing the service catalog instance
+	instance, err := s.instanceLister.Instances(object.GetNamespace()).Get(owner.Name)
+	if err != nil {
+		glog.V(4).Infof("ignoring orphaned object '%s' of instance '%s'", object.GetSelfLink(), owner.Name)
+		return false, nil
+	}
+
+	return true, instance
 }
 
 // SynchronizeInstance accepts an instance key (namespace/name)

@@ -19,11 +19,9 @@ import (
 	clientset "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	samplescheme "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
 	informers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
-	listers "github.com/Azure/service-catalog-templates/pkg/client/listers/templates/experimental"
 	svcatv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	svcatclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	svcatinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
-	svcatlisters "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,29 +34,20 @@ const (
 	// ErrResourceExists is used as part of the Event 'reason' when a Instance fails
 	// to sync due to a Deployment of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
-
-	// MessageResourceExists is the message used for Events when a resource
-	// fails to sync due to a Deployment already existing
-	MessageResourceExists = "Resource %q already exists and is not managed by Instance"
 	// MessageResourceSynced is the message used for an Event fired when a Instance
 	// is synced successfully
 	MessageResourceSynced = "Instance synced successfully"
 )
 
 // Controller is the controller implementation for Instance resources
+// NOTE: This is the stock CRD implementation from https://github.com/kubernetes/sample-controller
+// all interesting logic should live in ../svcatt/synchronizer.go
 type Controller struct {
-	kubeClient kubernetes.Interface
-	// templatesClient is a clientset for our own API group
-	templatesClient clientset.Interface
-	svcatClient     svcatclientset.Interface
-
-	instancesLister listers.InstanceLister
-	instancesSynced cache.InformerSynced
-
-	svcatInstancesLister svcatlisters.ServiceInstanceLister
-	svcatInstancesSynced cache.InformerSynced
-
 	synchronizer *svcatt.Synchronizer
+
+	kubeClient           kubernetes.Interface
+	instancesSynced      cache.InformerSynced
+	svcatInstancesSynced cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -97,10 +86,6 @@ func NewController(
 	controller := &Controller{
 		kubeClient:           kubeClient,
 		synchronizer:         svcatt.NewSynchronizer(templatesClient, svcatClient, instanceInformer.Lister(), svcatInstanceInformer.Lister()),
-		svcatClient:          svcatClient,
-		templatesClient:      templatesClient,
-		instancesLister:      instanceInformer.Lister(),
-		svcatInstancesLister: svcatInstanceInformer.Lister(),
 		instancesSynced:      instanceInformer.Informer().HasSynced,
 		svcatInstancesSynced: svcatInstanceInformer.Informer().HasSynced,
 		workqueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Instances"),
@@ -287,20 +272,8 @@ func (c *Controller) handleObject(obj interface{}) {
 		glog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
 	}
 	glog.V(4).Infof("Processing object: %s", object.GetName())
-	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
-		// If this object is not owned by a Instance, we should not do anything more
-		// with it.
-		if ownerRef.Kind != "Instance" {
-			return
-		}
-
-		inst, err := c.instancesLister.Instances(object.GetNamespace()).Get(ownerRef.Name)
-		if err != nil {
-			glog.V(4).Infof("ignoring orphaned object '%s' of inst '%s'", object.GetSelfLink(), ownerRef.Name)
-			return
-		}
-
-		c.enqueueInstance(inst)
+	if ok, instance := c.synchronizer.IsManagedInstance(object); ok {
+		c.enqueueInstance(instance)
 		return
 	}
 }
