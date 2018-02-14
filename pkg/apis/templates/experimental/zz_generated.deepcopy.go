@@ -5,6 +5,7 @@
 package experimental
 
 import (
+	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -73,6 +74,22 @@ func (in *InstanceList) DeepCopyObject() runtime.Object {
 func (in *InstanceSpec) DeepCopyInto(out *InstanceSpec) {
 	*out = *in
 	in.PlanSelector.DeepCopyInto(&out.PlanSelector)
+	if in.Parameters != nil {
+		in, out := &in.Parameters, &out.Parameters
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(runtime.RawExtension)
+			(*in).DeepCopyInto(*out)
+		}
+	}
+	if in.ParametersFrom != nil {
+		in, out := &in.ParametersFrom, &out.ParametersFrom
+		*out = make([]v1beta1.ParametersFromSource, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 
