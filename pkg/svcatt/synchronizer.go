@@ -11,10 +11,12 @@ import (
 
 	templates "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 	templatesclient "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
+	templateinformers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/templates/experimental"
 	templateslisters "github.com/Azure/service-catalog-templates/pkg/client/listers/templates/experimental"
 
 	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	svcatinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	svcatlisters "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
 )
 
@@ -29,15 +31,17 @@ type Synchronizer struct {
 	svcatClient          svcatclient.Interface
 	instanceLister       templateslisters.InstanceLister
 	svcatInstancesLister svcatlisters.ServiceInstanceLister
+	resolver             *resolver
 }
 
 func NewSynchronizer(templatesClient templatesclient.Interface, svcatClient svcatclient.Interface,
-	instanceLister templateslisters.InstanceLister, svcatInstancesLister svcatlisters.ServiceInstanceLister) *Synchronizer {
+	templatesInformers templateinformers.Interface, svcatInformers svcatinformers.Interface) *Synchronizer {
 	return &Synchronizer{
 		templatesClient:      templatesClient,
 		svcatClient:          svcatClient,
-		instanceLister:       instanceLister,
-		svcatInstancesLister: svcatInstancesLister,
+		instanceLister:       templatesInformers.Instances().Lister(),
+		svcatInstancesLister: svcatInformers.ServiceInstances().Lister(),
+		resolver:             newResolver(templatesClient, svcatClient),
 	}
 }
 
@@ -81,7 +85,7 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, *templates.Instanc
 	}
 
 	// Get the Instance resource with this namespace/name
-	inst, err := s.instanceLister.Instances(namespace).Get(name)
+	cachedInst, err := s.instanceLister.Instances(namespace).Get(name)
 	if err != nil {
 		// The Instance resource may no longer exist, in which case we stop
 		// processing.
@@ -92,6 +96,8 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, *templates.Instanc
 
 		return false, nil, err
 	}
+	// TODO: Figure out the best practices for proactive DeepCopies and avoiding pointers so I don't mess up the cache
+	inst := cachedInst.DeepCopy()
 
 	instanceName := inst.Name
 	if instanceName == "" {
@@ -110,7 +116,18 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, *templates.Instanc
 	svcInst, err := s.svcatInstancesLister.ServiceInstances(inst.Namespace).Get(instanceName)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
-		svcInst = BuildServiceInstance(inst, nil)
+		cachedTemplate, err := s.resolver.ResolveTemplate(*inst)
+		if err != nil {
+			// TODO: Update status to unresolvable
+			return false, inst, err
+		}
+		// TODO: Figure out the best practices for proactive DeepCopies and avoiding pointers so I don't mess up the cache
+		template := cachedTemplate.DeepCopy()
+
+		svcInst, err = BuildServiceInstance(*inst, *template)
+		if err != nil {
+			return false, inst, err
+		}
 		svcInst, err = s.svcatClient.ServicecatalogV1beta1().ServiceInstances(inst.Namespace).Create(svcInst)
 	}
 

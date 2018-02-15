@@ -1,0 +1,8 @@
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: Instance
+metadata:
+  name: badtestdb
+  namespace: default
+spec:
+  serviceType: stuff
+

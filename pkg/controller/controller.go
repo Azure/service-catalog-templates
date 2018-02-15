@@ -71,8 +71,10 @@ func NewController(
 
 	// obtain references to shared index templatesinformers for the Deployment and Instance
 	// types.
-	instanceInformer := templatesInformerFactory.Templates().Experimental().Instances()
-	svcatInstanceInformer := svcatInformerFactory.Servicecatalog().V1beta1().ServiceInstances()
+	templatesInformers := templatesInformerFactory.Templates().Experimental()
+	instanceInformer := templatesInformers.Instances().Informer()
+	svcatInformers := svcatInformerFactory.Servicecatalog().V1beta1()
+	svcatInstanceInformer := svcatInformers.ServiceInstances().Informer()
 
 	// Create event broadcaster
 	// Add service-catalog-templates-controller types to the default Kubernetes Scheme so Events can be
@@ -86,16 +88,16 @@ func NewController(
 
 	controller := &Controller{
 		kubeClient:           kubeClient,
-		synchronizer:         svcatt.NewSynchronizer(templatesClient, svcatClient, instanceInformer.Lister(), svcatInstanceInformer.Lister()),
-		instancesSynced:      instanceInformer.Informer().HasSynced,
-		svcatInstancesSynced: svcatInstanceInformer.Informer().HasSynced,
+		synchronizer:         svcatt.NewSynchronizer(templatesClient, svcatClient, templatesInformers, svcatInformers),
+		instancesSynced:      instanceInformer.HasSynced,
+		svcatInstancesSynced: svcatInstanceInformer.HasSynced,
 		workqueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Instances"),
 		recorder:             recorder,
 	}
 
 	glog.Info("Setting up event handlers")
 	// Set up an event handler for when Instance resources change
-	instanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	instanceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueInstance,
 		UpdateFunc: func(old, new interface{}) {
 			controller.enqueueInstance(new)
@@ -107,7 +109,7 @@ func NewController(
 	// processing. This way, we don't need to implement custom logic for
 	// handling Deployment resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
-	svcatInstanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	svcatInstanceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
 		UpdateFunc: func(old, new interface{}) {
 			newInst := new.(*svcat.ServiceInstance)

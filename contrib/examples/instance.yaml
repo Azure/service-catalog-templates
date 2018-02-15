@@ -1,16 +1,11 @@
 apiVersion: templates.servicecatalog.k8s.io/experimental
 kind: Instance
 metadata:
-  name: test-mysqldb
+  name: testdb
   namespace: default
-  labels:
-    type: mysqldb
 spec:
-  classExternalName: azure-mysqldb
-  planExternalName: basic50
-  parameters:
-    location: eastus
-    resourceGroup: default
-    sslEnforcement: disabled
-    firewallStartIPAddress: "0.0.0.0"
-    firewallEndIPAddress: "255.255.255.255"
+  serviceType: mysqldb
+  parametersFrom:
+  - secretKeyRef:
+     name: secretName
+     key: myKey

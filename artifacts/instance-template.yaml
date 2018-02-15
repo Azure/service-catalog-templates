@@ -26,12 +26,17 @@ spec:
       properties:
         spec:
           required:
+          - serviceType
           - classExternalName
           - planExternalName
           properties:
+            serviceType:
+              type: string
             classExternalName:
               type: string
             planExternalName:
               type: string
             parameters:
+              type: object
+            parametersFrom:
               type: object

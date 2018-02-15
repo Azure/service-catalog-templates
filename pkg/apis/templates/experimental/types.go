@@ -26,6 +26,10 @@ import (
 	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
+const (
+	FieldServiceTypeName = "serviceType"
+)
+
 var (
 	InstanceKind = strings.Split(fmt.Sprintf("%T", Instance{}), ".")[1]
 )
@@ -45,8 +49,15 @@ type InstanceTemplate struct {
 
 // InstanceTemplateSpec is the spec for a InstanceTemplate resource
 type InstanceTemplateSpec struct {
-	ClusterServiceClassExternalName string `json:"clusterServiceClassExternalName"`
-	ClusterServicePlanExternalName  string `json:"clusterServicePlanExternalName"`
+	ServiceType       string `json:"serviceType"`
+	ClassExternalName string `json:"classExternalName"`
+	PlanExternalName  string `json:"planExternalName"`
+
+	// +optional
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// +optional
+	ParametersFrom []svcat.ParametersFromSource `json:"parametersFrom,omitempty"`
 }
 
 // InstanceTemplateStatus is the status for a InstanceTemplate resource
@@ -79,8 +90,12 @@ type Instance struct {
 
 // InstanceSpec is the spec for a Instance resource
 type InstanceSpec struct {
+	ServiceType string `json:"serviceType"`
+
 	// +optional
-	PlanSelector metav1.LabelSelector `json:"planSelector,omitempty"`
+	PlanSelector *metav1.LabelSelector `json:"planSelector,omitempty"`
+
+	// TODO: Do we need to allow people to select by uuid instead?
 
 	// +optional
 	ClassExternalName string `json:"classExternalName,omitempty"`

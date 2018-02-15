@@ -25,7 +25,11 @@ spec:
     openAPIV3Schema:
       properties:
         spec:
+          required:
+          - serviceType
           properties:
+            serviceType:
+              type: string
             planSelector:
               type: object
             classExternalName:
@@ -33,4 +37,6 @@ spec:
             planExternalName:
               type: string
             parameters:
+              type: object
+            parametersFrom:
               type: object
