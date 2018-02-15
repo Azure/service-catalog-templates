@@ -227,6 +227,12 @@
   version = "v2.0.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/peterbourgon/mergemap"
+  packages = ["."]
+  revision = "e21c03b7a721e413718d2703181ead350d3c9d6f"
+
+[[projects]]
   name = "github.com/satori/go.uuid"
   packages = ["."]
   revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
@@ -361,6 +367,7 @@
     "storage/v1beta1"
   ]
   revision = "006a217681ae70cbacdd66a5e2fca1a61a8ff28e"
+  version = "kubernetes-1.9.2"
 
 [[projects]]
   name = "k8s.io/apimachinery"
@@ -474,6 +481,7 @@
     "util/workqueue"
   ]
   revision = "9389c055a838d4f208b699b3c7c51b70f2368861"
+  version = "kubernetes-1.9.2"
 
 [[projects]]
   branch = "release-1.9"
@@ -513,6 +521,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ef5e9d89b4e0202f67f05b2393b614940f9d9b6496dc90c52edffffb1e620c5c"
+  inputs-digest = "604f52549ab8b8746ba596ea10985f5fc970a5bbf27e2ae195f02e164cda03e3"
   solver-name = "gps-cdcl"
   solver-version = 1

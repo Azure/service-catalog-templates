@@ -44,3 +44,7 @@ required = [
   [[prune.project]]
     name = "k8s.io/apimachinery"
     unused-packages=false
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/peterbourgon/mergemap"
