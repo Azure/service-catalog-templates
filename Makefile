@@ -16,13 +16,13 @@ default: build
 build-image:
 	docker build -t $(DOCKER_IMG) ./build/build-image
 
-codegen:
-	$(DO) ./hack/update-codegen.sh
+codegen: build-image
+	$(DO) ./build/update-codegen.sh
 
-build: build-image
+build: codegen
 	$(DO) ./build/build.sh
 
-run: build-image
+run: build
 	$(DO) ./hack/run.sh
 
 create-cluster:
