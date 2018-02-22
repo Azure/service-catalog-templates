@@ -2,13 +2,29 @@
 
 package experimental
 
-// InstanceListerExpansion allows custom methods to be added to
-// InstanceLister.
-type InstanceListerExpansion interface{}
+// BindingTemplateListerExpansion allows custom methods to be added to
+// BindingTemplateLister.
+type BindingTemplateListerExpansion interface{}
 
-// InstanceNamespaceListerExpansion allows custom methods to be added to
-// InstanceNamespaceLister.
-type InstanceNamespaceListerExpansion interface{}
+// BindingTemplateNamespaceListerExpansion allows custom methods to be added to
+// BindingTemplateNamespaceLister.
+type BindingTemplateNamespaceListerExpansion interface{}
+
+// CatalogBindingListerExpansion allows custom methods to be added to
+// CatalogBindingLister.
+type CatalogBindingListerExpansion interface{}
+
+// CatalogBindingNamespaceListerExpansion allows custom methods to be added to
+// CatalogBindingNamespaceLister.
+type CatalogBindingNamespaceListerExpansion interface{}
+
+// CatalogInstanceListerExpansion allows custom methods to be added to
+// CatalogInstanceLister.
+type CatalogInstanceListerExpansion interface{}
+
+// CatalogInstanceNamespaceListerExpansion allows custom methods to be added to
+// CatalogInstanceNamespaceLister.
+type CatalogInstanceNamespaceListerExpansion interface{}
 
 // InstanceTemplateListerExpansion allows custom methods to be added to
 // InstanceTemplateLister.

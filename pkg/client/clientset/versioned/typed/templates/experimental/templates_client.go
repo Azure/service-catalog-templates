@@ -9,7 +9,9 @@ import (
 
 type TemplatesExperimentalInterface interface {
 	RESTClient() rest.Interface
-	InstancesGetter
+	BindingTemplatesGetter
+	CatalogBindingsGetter
+	CatalogInstancesGetter
 	InstanceTemplatesGetter
 }
 
@@ -18,8 +20,16 @@ type TemplatesExperimentalClient struct {
 	restClient rest.Interface
 }
 
-func (c *TemplatesExperimentalClient) Instances(namespace string) InstanceInterface {
-	return newInstances(c, namespace)
+func (c *TemplatesExperimentalClient) BindingTemplates(namespace string) BindingTemplateInterface {
+	return newBindingTemplates(c, namespace)
+}
+
+func (c *TemplatesExperimentalClient) CatalogBindings(namespace string) CatalogBindingInterface {
+	return newCatalogBindings(c, namespace)
+}
+
+func (c *TemplatesExperimentalClient) CatalogInstances(namespace string) CatalogInstanceInterface {
+	return newCatalogInstances(c, namespace)
 }
 
 func (c *TemplatesExperimentalClient) InstanceTemplates(namespace string) InstanceTemplateInterface {

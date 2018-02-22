@@ -10,8 +10,16 @@ type FakeTemplatesExperimental struct {
 	*testing.Fake
 }
 
-func (c *FakeTemplatesExperimental) Instances(namespace string) experimental.InstanceInterface {
-	return &FakeInstances{c, namespace}
+func (c *FakeTemplatesExperimental) BindingTemplates(namespace string) experimental.BindingTemplateInterface {
+	return &FakeBindingTemplates{c, namespace}
+}
+
+func (c *FakeTemplatesExperimental) CatalogBindings(namespace string) experimental.CatalogBindingInterface {
+	return &FakeCatalogBindings{c, namespace}
+}
+
+func (c *FakeTemplatesExperimental) CatalogInstances(namespace string) experimental.CatalogInstanceInterface {
+	return &FakeCatalogInstances{c, namespace}
 }
 
 func (c *FakeTemplatesExperimental) InstanceTemplates(namespace string) experimental.InstanceTemplateInterface {

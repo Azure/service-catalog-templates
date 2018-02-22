@@ -8,8 +8,12 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// Instances returns a InstanceInformer.
-	Instances() InstanceInformer
+	// BindingTemplates returns a BindingTemplateInformer.
+	BindingTemplates() BindingTemplateInformer
+	// CatalogBindings returns a CatalogBindingInformer.
+	CatalogBindings() CatalogBindingInformer
+	// CatalogInstances returns a CatalogInstanceInformer.
+	CatalogInstances() CatalogInstanceInformer
 	// InstanceTemplates returns a InstanceTemplateInformer.
 	InstanceTemplates() InstanceTemplateInformer
 }
@@ -25,9 +29,19 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// Instances returns a InstanceInformer.
-func (v *version) Instances() InstanceInformer {
-	return &instanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// BindingTemplates returns a BindingTemplateInformer.
+func (v *version) BindingTemplates() BindingTemplateInformer {
+	return &bindingTemplateInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// CatalogBindings returns a CatalogBindingInformer.
+func (v *version) CatalogBindings() CatalogBindingInformer {
+	return &catalogBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// CatalogInstances returns a CatalogInstanceInformer.
+func (v *version) CatalogInstances() CatalogInstanceInformer {
+	return &catalogInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // InstanceTemplates returns a InstanceTemplateInformer.

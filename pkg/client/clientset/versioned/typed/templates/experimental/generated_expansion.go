@@ -1,5 +1,9 @@
 package experimental
 
-type InstanceExpansion interface{}
+type BindingTemplateExpansion interface{}
+
+type CatalogBindingExpansion interface{}
+
+type CatalogInstanceExpansion interface{}
 
 type InstanceTemplateExpansion interface{}
