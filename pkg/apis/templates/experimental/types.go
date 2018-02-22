@@ -31,7 +31,8 @@ const (
 )
 
 var (
-	InstanceKind = strings.Split(fmt.Sprintf("%T", Instance{}), ".")[1]
+	InstanceKind = strings.Split(fmt.Sprintf("%T", CatalogInstance{}), ".")[1]
+	BindingKind  = strings.Split(fmt.Sprintf("%T", CatalogBinding{}), ".")[1]
 )
 
 // +genclient
@@ -49,7 +50,9 @@ type InstanceTemplate struct {
 
 // InstanceTemplateSpec is the spec for a InstanceTemplate resource
 type InstanceTemplateSpec struct {
-	ServiceType       string `json:"serviceType"`
+	ServiceType string `json:"serviceType"`
+
+	// TODO: Should this switch to using servicecatalog's PlanReference type?
 	ClassExternalName string `json:"classExternalName"`
 	PlanExternalName  string `json:"planExternalName"`
 
@@ -79,23 +82,23 @@ type InstanceTemplateList struct {
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Instance is a specification for a Instance resource
-type Instance struct {
+// CatalogInstance is a specification for a CatalogInstance resource
+type CatalogInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   InstanceSpec   `json:"spec"`
-	Status InstanceStatus `json:"status"`
+	Spec   CatalogInstanceSpec   `json:"spec"`
+	Status CatalogInstanceStatus `json:"status"`
 }
 
-// InstanceSpec is the spec for a Instance resource
-type InstanceSpec struct {
+// CatalogInstanceSpec is the spec for a CatalogInstance resource
+type CatalogInstanceSpec struct {
 	ServiceType string `json:"serviceType"`
 
 	// +optional
 	PlanSelector *metav1.LabelSelector `json:"planSelector,omitempty"`
 
-	// TODO: Do we need to allow people to select by uuid instead?
+	// TODO: Support all the same fields as ServiceInstanceSpec: external name, external id, k8s name (uuid)
 
 	// +optional
 	ClassExternalName string `json:"classExternalName,omitempty"`
@@ -117,30 +120,104 @@ type InstanceSpec struct {
 	UpdateRequests int64 `json:"updateRequests"`
 }
 
-// InstanceStatus is the status for a Instance resource
-type InstanceStatus struct {
-	ResolvedClass ObjectReference `json:"resolvedClass"`
-	ResolvedPlan  ObjectReference `json:"resolvedPlan"`
+// CatalogInstanceStatus is the status for a CatalogInstance resource
+type CatalogInstanceStatus struct {
+	ResolvedClass svcat.ObjectReference `json:"resolvedClass"`
+	ResolvedPlan  svcat.ObjectReference `json:"resolvedPlan"`
 	// TODO: parameters
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// InstanceList is a list of Instance resources
-type InstanceList struct {
+// CatalogInstanceList is a list of CatalogInstance resources
+type CatalogInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Instance `json:"items"`
+	Items []CatalogInstance `json:"items"`
 }
 
-// ClusterObjectReference contains enough information to let you locate the
-// cluster-scoped referenced object.
-type ObjectReference struct {
-	// Name of the referent.
-	Name string `json:"name"`
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-	// Namespace of the referent. Optional for cluster scoped resources.
+// BindingTemplate is a specification for a BindingTemplate resource
+type BindingTemplate struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   BindingTemplateSpec   `json:"spec"`
+	Status BindingTemplateStatus `json:"status"`
+}
+
+// BindingTemplateSpec is the spec for a BindingTemplate resource
+type BindingTemplateSpec struct {
+	ServiceType string `json:"serviceType"`
+
 	// +optional
-	Namespace string `json:"namespace,omitempty"`
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// +optional
+	ParametersFrom []svcat.ParametersFromSource `json:"parametersFrom,omitempty"`
+
+	// +optional
+	SecretKeys map[string]string `json:"secret-keys,omitempty"`
+}
+
+// BindingTemplateStatus is the status for a BindingTemplate resource
+type BindingTemplateStatus struct {
+	Message int32 `json:"message"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// BindingTemplateList is a list of BindingTemplate resources
+type BindingTemplateList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []BindingTemplate `json:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// CatalogBinding is a specification for a CatalogBinding resource
+type CatalogBinding struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   CatalogBindingSpec   `json:"spec"`
+	Status CatalogBindingStatus `json:"status"`
+}
+
+// CatalogBindingSpec is the spec for a CatalogBinding resource
+type CatalogBindingSpec struct {
+	// Immutable.
+	InstanceRef svcat.LocalObjectReference `json:"instanceRef"`
+
+	// +optional
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// +optional
+	ParametersFrom []svcat.ParametersFromSource `json:"parametersFrom,omitempty"`
+
+	// +optional
+	SecretKeys map[string]string `json:"secret-keys,omitempty"`
+}
+
+// CatalogBindingStatus is the status for a CatalogBinding resource
+type CatalogBindingStatus struct {
+	// TODO: parameters, secret-keys
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// CatalogBindingList is a list of CatalogBinding resources
+type CatalogBindingList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []CatalogBinding `json:"items"`
 }

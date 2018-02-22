@@ -25,7 +25,7 @@ func newResolver(templatesClient templatesclient.Interface, svcatClient svcatcli
 	}
 }
 
-func (r *resolver) ResolveTemplate(instance templates.Instance) (*templates.InstanceTemplate, error) {
+func (r *resolver) ResolveInstanceTemplate(instance templates.CatalogInstance) (*templates.InstanceTemplate, error) {
 	opts := meta.ListOptions{
 		LabelSelector: labels.FormatLabels(map[string]string{templates.FieldServiceTypeName: instance.Spec.ServiceType}),
 	}
@@ -34,7 +34,7 @@ func (r *resolver) ResolveTemplate(instance templates.Instance) (*templates.Inst
 		return nil, err
 	}
 	if len(results.Items) == 0 {
-		return nil, fmt.Errorf("unable to resolve a template for service type: %s", instance.Spec.ServiceType)
+		return nil, fmt.Errorf("unable to resolve an instance template for service type: %s", instance.Spec.ServiceType)
 	}
 
 	template := results.Items[0]
@@ -53,7 +53,28 @@ func (r *resolver) ResolveTemplate(instance templates.Instance) (*templates.Inst
 	return &template, nil
 }
 
-func (r *resolver) ResolvePlan(instance templates.Instance) (*svcat.ClusterServiceClass, *svcat.ClusterServicePlan, error) {
+func (r *resolver) ResolveBindingTemplate(binding templates.CatalogBinding) (*templates.BindingTemplate, error) {
+	inst, err := r.templatesClient.TemplatesExperimental().CatalogInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name, meta.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	opts := meta.ListOptions{
+		LabelSelector: labels.FormatLabels(map[string]string{templates.FieldServiceTypeName: inst.Spec.ServiceType}),
+	}
+	results, err := r.templatesClient.TemplatesExperimental().BindingTemplates(binding.Namespace).List(opts)
+	if err != nil {
+		return nil, err
+	}
+	if len(results.Items) == 0 {
+		return nil, fmt.Errorf("unable to resolve a binding template for service type: %s", inst.Spec.ServiceType)
+	}
+
+	template := results.Items[0]
+	return &template, nil
+}
+
+func (r *resolver) ResolvePlan(instance templates.CatalogInstance) (*svcat.ClusterServiceClass, *svcat.ClusterServicePlan, error) {
 	// TODO: using the plan selector and type select a matching plan
 	return nil, nil, nil
 }

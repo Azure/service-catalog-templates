@@ -8,7 +8,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
+	util "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -49,13 +50,17 @@ type Controller struct {
 	kubeClient           kubernetes.Interface
 	instancesSynced      cache.InformerSynced
 	svcatInstancesSynced cache.InformerSynced
+	bindingsSynced       cache.InformerSynced
+	svcatBindingsSynced  cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
 	// means we can ensure we only process a fixed amount of resources at a
 	// time, and makes it easy to ensure we are never processing the same item
 	// simultaneously in two different workers.
-	workqueue workqueue.RateLimitingInterface
+	instanceQ workqueue.RateLimitingInterface
+	bindingQ  workqueue.RateLimitingInterface
+
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	recorder record.EventRecorder
@@ -72,9 +77,11 @@ func NewController(
 	// obtain references to shared index templatesinformers for the Deployment and Instance
 	// types.
 	templatesInformers := templatesInformerFactory.Templates().Experimental()
-	instanceInformer := templatesInformers.Instances().Informer()
+	instanceInformer := templatesInformers.CatalogInstances().Informer()
+	bindingInformer := templatesInformers.CatalogBindings().Informer()
 	svcatInformers := svcatInformerFactory.Servicecatalog().V1beta1()
 	svcatInstanceInformer := svcatInformers.ServiceInstances().Informer()
+	svcatBindingInformer := svcatInformers.ServiceBindings().Informer()
 
 	// Create event broadcaster
 	// Add service-catalog-templates-controller types to the default Kubernetes Scheme so Events can be
@@ -86,23 +93,38 @@ func NewController(
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
-	controller := &Controller{
+	c := &Controller{
 		kubeClient:           kubeClient,
 		synchronizer:         svcatt.NewSynchronizer(templatesClient, svcatClient, templatesInformers, svcatInformers),
 		instancesSynced:      instanceInformer.HasSynced,
+		bindingsSynced:       bindingInformer.HasSynced,
 		svcatInstancesSynced: svcatInstanceInformer.HasSynced,
-		workqueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Instances"),
+		svcatBindingsSynced:  svcatBindingInformer.HasSynced,
+		instanceQ:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Instances"),
+		bindingQ:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Bindings"),
 		recorder:             recorder,
 	}
 
 	glog.Info("Setting up event handlers")
-	// Set up an event handler for when Instance resources change
+
+	// Set up an event handler for when Templates resources change
 	instanceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueInstance,
+		AddFunc: func(obj interface{}) {
+			c.enqueueResource(obj, c.instanceQ)
+		},
 		UpdateFunc: func(old, new interface{}) {
-			controller.enqueueInstance(new)
+			c.enqueueResource(new, c.instanceQ)
 		},
 	})
+	bindingInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			c.enqueueResource(obj, c.bindingQ)
+		},
+		UpdateFunc: func(old, new interface{}) {
+			c.enqueueResource(new, c.bindingQ)
+		},
+	})
+
 	// Set up an event handler for when Deployment resources change. This
 	// handler will lookup the owner of the given Deployment, and if it is
 	// owned by a Instance resource will enqueue that Instance resource for
@@ -110,7 +132,7 @@ func NewController(
 	// handling Deployment resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
 	svcatInstanceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.handleObject,
+		AddFunc: c.handleSvcatResource,
 		UpdateFunc: func(old, new interface{}) {
 			newInst := new.(*svcat.ServiceInstance)
 			oldInst := old.(*svcat.ServiceInstance)
@@ -119,12 +141,26 @@ func NewController(
 				// Two different versions of the same instance will always have different RVs.
 				return
 			}
-			controller.handleObject(new)
+			c.handleSvcatResource(new)
 		},
-		DeleteFunc: controller.handleObject,
+		DeleteFunc: c.handleSvcatResource,
+	})
+	svcatBindingInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: c.handleSvcatResource,
+		UpdateFunc: func(old, new interface{}) {
+			newBnd := new.(*svcat.ServiceBinding)
+			oldBnd := old.(*svcat.ServiceBinding)
+			if newBnd.ResourceVersion == oldBnd.ResourceVersion {
+				// Periodic resync will send update events for all known instances.
+				// Two different versions of the same instance will always have different RVs.
+				return
+			}
+			c.handleSvcatResource(new)
+		},
+		DeleteFunc: c.handleSvcatResource,
 	})
 
-	return controller
+	return c
 }
 
 // Run will set up the event handlers for types we are interested in, as well
@@ -132,8 +168,9 @@ func NewController(
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
-	defer runtime.HandleCrash()
-	defer c.workqueue.ShutDown()
+	defer util.HandleCrash()
+	defer c.instanceQ.ShutDown()
+	defer c.bindingQ.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
 	glog.Info("Starting Templates controller")
@@ -141,13 +178,23 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")
 	if ok := cache.WaitForCacheSync(stopCh, c.svcatInstancesSynced, c.instancesSynced); !ok {
-		return fmt.Errorf("failed to wait for caches to sync")
+		return fmt.Errorf("failed to wait for instance caches to sync")
+	}
+	if ok := cache.WaitForCacheSync(stopCh, c.svcatBindingsSynced, c.bindingsSynced); !ok {
+		return fmt.Errorf("failed to wait for binding caches to sync")
 	}
 
 	glog.Info("Starting workers")
 	// Launch two workers to process Instance resources
 	for i := 0; i < threadiness; i++ {
-		go wait.Until(c.runWorker, time.Second, stopCh)
+		go wait.Until(func() {
+			for c.processNextWorkItem(c.instanceQ, c.synchronizer.SynchronizeInstance) {
+			}
+		}, time.Second, stopCh)
+		go wait.Until(func() {
+			for c.processNextWorkItem(c.bindingQ, c.synchronizer.SynchronizeBinding) {
+			}
+		}, time.Second, stopCh)
 	}
 
 	glog.Info("Started workers")
@@ -157,18 +204,12 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	return nil
 }
 
-// runWorker is a long-running function that will continually call the
-// processNextWorkItem function in order to read and process a message on the
-// workqueue.
-func (c *Controller) runWorker() {
-	for c.processNextWorkItem() {
-	}
-}
+type resourceSynchronizationHandler func(key string) (bool, runtime.Object, error)
 
 // processNextWorkItem will read a single work item off the workqueue and
 // attempt to process it, by calling the syncHandler.
-func (c *Controller) processNextWorkItem() bool {
-	obj, shutdown := c.workqueue.Get()
+func (c *Controller) processNextWorkItem(q workqueue.RateLimitingInterface, sync resourceSynchronizationHandler) bool {
+	obj, shutdown := q.Get()
 
 	if shutdown {
 		return false
@@ -182,7 +223,7 @@ func (c *Controller) processNextWorkItem() bool {
 		// not call Forget if a transient error occurs, instead the item is
 		// put back on the workqueue and attempted again after a back-off
 		// period.
-		defer c.workqueue.Done(obj)
+		defer q.Done(obj)
 		var key string
 		var ok bool
 		// We expect strings to come off the workqueue. These are of the
@@ -194,39 +235,39 @@ func (c *Controller) processNextWorkItem() bool {
 			// As the item in the workqueue is actually invalid, we call
 			// Forget here else we'd go into a loop of attempting to
 			// process a work item that is invalid.
-			c.workqueue.Forget(obj)
-			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
+			c.instanceQ.Forget(obj)
+			util.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
 			return nil
 		}
-		// Run the syncHandler, passing it the namespace/name string of the
+		// Run the sync, passing it the namespace/name string of the
 		// Instance resource to be synced.
-		if err := c.syncHandler(key); err != nil {
+		if err := c.synchronizeResource(key, sync); err != nil {
 			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
 		}
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
-		c.workqueue.Forget(obj)
+		q.Forget(obj)
 		glog.Infof("Successfully synced '%s'", key)
 		return nil
 	}(obj)
 
 	if err != nil {
-		runtime.HandleError(err)
+		util.HandleError(err)
 		return true
 	}
 
 	return true
 }
 
-// syncHandler compares the actual state with the desired, and attempts to
-// converge the two. It then updates the Status block of the Instance resource
+// synchronizeResource compares the actual state with the desired, and attempts to
+// converge the two. It then updates the Status block of the resource
 // with the current status of the resource.
-func (c *Controller) syncHandler(key string) error {
-	ok, instance, err := c.synchronizer.SynchronizeInstance(key)
+func (c *Controller) synchronizeResource(key string, sync resourceSynchronizationHandler) error {
+	ok, obj, err := sync(key)
 	if err != nil {
 		// Append a warning to the instance
-		if instance != nil {
-			c.recorder.Event(instance, corev1.EventTypeWarning, ErrResourceExists, err.Error())
+		if obj != nil {
+			c.recorder.Event(obj, corev1.EventTypeWarning, ErrResourceExists, err.Error())
 		}
 		return err
 	}
@@ -234,49 +275,48 @@ func (c *Controller) syncHandler(key string) error {
 	// Record a successful sync
 	//
 	if ok {
-		c.recorder.Event(instance, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+		c.recorder.Event(obj, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	}
 
 	return nil
 }
 
-// enqueueInstance takes a Instance resource and converts it into a namespace/name
-// string which is then put onto the work queue. This method should *not* be
-// passed resources of any type other than Instance.
-func (c *Controller) enqueueInstance(obj interface{}) {
+// enqueueResource takes a resource and converts it into a namespace/name
+// string which is then put onto the specified work queue.
+func (c *Controller) enqueueResource(obj interface{}, q workqueue.RateLimitingInterface) {
 	var key string
 	var err error
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
-		runtime.HandleError(err)
+		util.HandleError(err)
 		return
 	}
-	c.workqueue.AddRateLimited(key)
+	q.AddRateLimited(key)
 }
 
-// handleObject will take any resource implementing metav1.Object and attempt
-// to find the Instance resource that 'owns' it. It does this by looking at the
+// handleSvcatResource will take any resource implementing metav1.Object and attempt
+// to find the shadow resource that 'owns' it. It does this by looking at the
 // objects metadata.ownerReferences field for an appropriate OwnerReference.
-// It then enqueues that Instance resource to be processed. If the object does not
+// It then enqueues that resource to be processed. If the object does not
 // have an appropriate OwnerReference, it will simply be skipped.
-func (c *Controller) handleObject(obj interface{}) {
+func (c *Controller) handleSvcatResource(obj interface{}) {
 	var object metav1.Object
 	var ok bool
 	if object, ok = obj.(metav1.Object); !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
-			runtime.HandleError(fmt.Errorf("error decoding object, invalid type"))
+			util.HandleError(fmt.Errorf("error decoding object, invalid type"))
 			return
 		}
 		object, ok = tombstone.Obj.(metav1.Object)
 		if !ok {
-			runtime.HandleError(fmt.Errorf("error decoding object tombstone, invalid type"))
+			util.HandleError(fmt.Errorf("error decoding object tombstone, invalid type"))
 			return
 		}
 		glog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
 	}
 	glog.V(4).Infof("Processing object: %s", object.GetName())
-	if ok, instance := c.synchronizer.IsManagedInstance(object); ok {
-		c.enqueueInstance(instance)
+	if ok := c.synchronizer.IsManaged(object); ok {
+		c.enqueueResource(obj, c.instanceQ)
 		return
 	}
 }

@@ -1,0 +1,12 @@
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: CatalogBinding
+metadata:
+  name: testdb
+  namespace: default
+spec:
+  instanceRef:
+    name: testdb
+  parameters:
+    param2: defaultvalue2
+  secretKeys: # Broker-specific json output keys mapped to predefined secret key names
+    database: dbname
