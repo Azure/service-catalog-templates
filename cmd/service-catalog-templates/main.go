@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"k8s.io/client-go/kubernetes"
+	coreinformers "k8s.io/client-go/informers"
+	coreclient "k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -33,7 +34,7 @@ func main() {
 		glog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
 
-	kubeClient, err := kubernetes.NewForConfig(cfg)
+	coreClient, err := coreclient.NewForConfig(cfg)
 	if err != nil {
 		glog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
@@ -48,11 +49,14 @@ func main() {
 		glog.Fatalf("Error building example clientset: %s", err.Error())
 	}
 
-	svcatInformerFactory := svcatinformers.NewSharedInformerFactory(svcatClient, time.Second*30)
-	templatesInformerFactory := informers.NewSharedInformerFactory(templatesClient, time.Second*30)
+	duration := time.Second * 30
+	coreInformerFactory := coreinformers.NewSharedInformerFactory(coreClient, duration)
+	svcatInformerFactory := svcatinformers.NewSharedInformerFactory(svcatClient, duration)
+	templatesInformerFactory := informers.NewSharedInformerFactory(templatesClient, duration)
 
-	controller := controller.NewController(kubeClient, svcatClient, templatesClient, svcatInformerFactory, templatesInformerFactory)
+	controller := controller.NewController(coreClient, svcatClient, templatesClient, coreInformerFactory, svcatInformerFactory, templatesInformerFactory)
 
+	go coreInformerFactory.Start(stopCh)
 	go svcatInformerFactory.Start(stopCh)
 	go templatesInformerFactory.Start(stopCh)
 

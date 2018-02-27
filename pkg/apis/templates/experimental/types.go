@@ -161,7 +161,7 @@ type BindingTemplateSpec struct {
 	ParametersFrom []svcat.ParametersFromSource `json:"parametersFrom,omitempty"`
 
 	// +optional
-	SecretKeys map[string]string `json:"secret-keys,omitempty"`
+	SecretKeys map[string]string `json:"secretKeys,omitempty"`
 }
 
 // BindingTemplateStatus is the status for a BindingTemplate resource
@@ -204,12 +204,18 @@ type CatalogBindingSpec struct {
 	ParametersFrom []svcat.ParametersFromSource `json:"parametersFrom,omitempty"`
 
 	// +optional
-	SecretKeys map[string]string `json:"secret-keys,omitempty"`
+	SecretKeys map[string]string `json:"secretKeys,omitempty"`
+
+	SecretName string `json:"secretName,omitempty"`
+
+	// Immutable.
+	// +optional
+	ExternalID string `json:"externalID,omitempty"`
 }
 
 // CatalogBindingStatus is the status for a CatalogBinding resource
 type CatalogBindingStatus struct {
-	// TODO: parameters, secret-keys
+	// TODO: parameters, secretKeys
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

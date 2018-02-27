@@ -22,5 +22,5 @@ spec:
               type: object
             parametersFrom:
               type: object
-            secret-keys:
+            secretKeys:
               type: object

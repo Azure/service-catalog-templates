@@ -11,7 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	util "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
+	coreinformers "k8s.io/client-go/informers"
+	coreclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -31,14 +32,14 @@ import (
 const controllerAgentName = "service-catalog-templates"
 
 const (
-	// SuccessSynced is used as part of the Event 'reason' when a Instance is synced
+	// SuccessSynced is used as part of the Event 'reason' when a shadow resource is synced
 	SuccessSynced = "Synced"
-	// ErrResourceExists is used as part of the Event 'reason' when a Instance fails
-	// to sync due to a Deployment of the same name already existing.
+	// ErrResourceExists is used as part of the Event 'reason' when a shadow resource fails
+	// to sync due to an unmanaged resource of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
-	// MessageResourceSynced is the message used for an Event fired when a Instance
+	// MessageResourceSynced is the message used for an Event fired when a shadow resource
 	// is synced successfully
-	MessageResourceSynced = "Instance synced successfully"
+	MessageResourceSynced = "Shadow resource synced successfully"
 )
 
 // Controller is the controller implementation for Instance resources
@@ -47,11 +48,12 @@ const (
 type Controller struct {
 	synchronizer *svcatt.Synchronizer
 
-	kubeClient           kubernetes.Interface
+	coreClient           coreclient.Interface
 	instancesSynced      cache.InformerSynced
 	svcatInstancesSynced cache.InformerSynced
 	bindingsSynced       cache.InformerSynced
 	svcatBindingsSynced  cache.InformerSynced
+	secretsSynced        cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -60,6 +62,7 @@ type Controller struct {
 	// simultaneously in two different workers.
 	instanceQ workqueue.RateLimitingInterface
 	bindingQ  workqueue.RateLimitingInterface
+	secretQ   workqueue.RateLimitingInterface
 
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
@@ -68,9 +71,10 @@ type Controller struct {
 
 // NewController returns a new sample controller
 func NewController(
-	kubeClient kubernetes.Interface,
+	coreClient coreclient.Interface,
 	svcatClient svcatclient.Interface,
 	templatesClient templatesclient.Interface,
+	coreInformerFactory coreinformers.SharedInformerFactory,
 	svcatInformerFactory svcatinformers.SharedInformerFactory,
 	templatesInformerFactory templatesinformers.SharedInformerFactory) *Controller {
 
@@ -82,6 +86,8 @@ func NewController(
 	svcatInformers := svcatInformerFactory.Servicecatalog().V1beta1()
 	svcatInstanceInformer := svcatInformers.ServiceInstances().Informer()
 	svcatBindingInformer := svcatInformers.ServiceBindings().Informer()
+	coreInformers := coreInformerFactory.Core().V1()
+	secretInformer := coreInformers.Secrets().Informer()
 
 	// Create event broadcaster
 	// Add service-catalog-templates-controller types to the default Kubernetes Scheme so Events can be
@@ -90,24 +96,26 @@ func NewController(
 	glog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.Infof)
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: coreClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	c := &Controller{
-		kubeClient:           kubeClient,
-		synchronizer:         svcatt.NewSynchronizer(templatesClient, svcatClient, templatesInformers, svcatInformers),
+		coreClient:           coreClient,
+		synchronizer:         svcatt.NewSynchronizer(coreClient, templatesClient, svcatClient, coreInformers, templatesInformers, svcatInformers),
 		instancesSynced:      instanceInformer.HasSynced,
 		bindingsSynced:       bindingInformer.HasSynced,
+		secretsSynced:        secretInformer.HasSynced,
 		svcatInstancesSynced: svcatInstanceInformer.HasSynced,
 		svcatBindingsSynced:  svcatBindingInformer.HasSynced,
 		instanceQ:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Instances"),
 		bindingQ:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Bindings"),
+		secretQ:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Secrets"),
 		recorder:             recorder,
 	}
 
 	glog.Info("Setting up event handlers")
 
-	// Set up an event handler for when Templates resources change
+	// Set up an event handler for when shadow resources change
 	instanceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			c.enqueueResource(obj, c.instanceQ)
@@ -124,15 +132,23 @@ func NewController(
 			c.enqueueResource(new, c.bindingQ)
 		},
 	})
+	secretInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			c.enqueueResource(obj, c.secretQ)
+		},
+		UpdateFunc: func(old, new interface{}) {
+			c.enqueueResource(new, c.secretQ)
+		},
+	})
 
-	// Set up an event handler for when Deployment resources change. This
-	// handler will lookup the owner of the given Deployment, and if it is
-	// owned by a Instance resource will enqueue that Instance resource for
+	// Set up an event handler for when managed resources change. This
+	// handler will lookup the owner of the given resource, and if it is
+	// owned by a shadow resource will enqueue that resource for
 	// processing. This way, we don't need to implement custom logic for
-	// handling Deployment resources. More info on this pattern:
+	// handling managed resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
 	svcatInstanceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: c.handleSvcatResource,
+		AddFunc: c.handleManagedResource,
 		UpdateFunc: func(old, new interface{}) {
 			newInst := new.(*svcat.ServiceInstance)
 			oldInst := old.(*svcat.ServiceInstance)
@@ -141,12 +157,12 @@ func NewController(
 				// Two different versions of the same instance will always have different RVs.
 				return
 			}
-			c.handleSvcatResource(new)
+			c.handleManagedResource(new)
 		},
-		DeleteFunc: c.handleSvcatResource,
+		DeleteFunc: c.handleManagedResource,
 	})
 	svcatBindingInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: c.handleSvcatResource,
+		AddFunc: c.handleManagedResource,
 		UpdateFunc: func(old, new interface{}) {
 			newBnd := new.(*svcat.ServiceBinding)
 			oldBnd := old.(*svcat.ServiceBinding)
@@ -155,9 +171,9 @@ func NewController(
 				// Two different versions of the same instance will always have different RVs.
 				return
 			}
-			c.handleSvcatResource(new)
+			c.handleManagedResource(new)
 		},
-		DeleteFunc: c.handleSvcatResource,
+		DeleteFunc: c.handleManagedResource,
 	})
 
 	return c
@@ -171,21 +187,22 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	defer util.HandleCrash()
 	defer c.instanceQ.ShutDown()
 	defer c.bindingQ.ShutDown()
+	defer c.secretQ.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
 	glog.Info("Starting Templates controller")
 
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.svcatInstancesSynced, c.instancesSynced); !ok {
-		return fmt.Errorf("failed to wait for instance caches to sync")
-	}
-	if ok := cache.WaitForCacheSync(stopCh, c.svcatBindingsSynced, c.bindingsSynced); !ok {
-		return fmt.Errorf("failed to wait for binding caches to sync")
+	if ok := cache.WaitForCacheSync(stopCh,
+		c.secretsSynced,
+		c.svcatInstancesSynced, c.instancesSynced,
+		c.svcatBindingsSynced, c.bindingsSynced); !ok {
+		return fmt.Errorf("failed to wait for informer caches to sync")
 	}
 
 	glog.Info("Starting workers")
-	// Launch two workers to process Instance resources
+	// Launch two workers to process resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(func() {
 			for c.processNextWorkItem(c.instanceQ, c.synchronizer.SynchronizeInstance) {
@@ -193,6 +210,10 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 		}, time.Second, stopCh)
 		go wait.Until(func() {
 			for c.processNextWorkItem(c.bindingQ, c.synchronizer.SynchronizeBinding) {
+			}
+		}, time.Second, stopCh)
+		go wait.Until(func() {
+			for c.processNextWorkItem(c.secretQ, c.synchronizer.SynchronizeSecret) {
 			}
 		}, time.Second, stopCh)
 	}
@@ -247,7 +268,6 @@ func (c *Controller) processNextWorkItem(q workqueue.RateLimitingInterface, sync
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
 		q.Forget(obj)
-		glog.Infof("Successfully synced '%s'", key)
 		return nil
 	}(obj)
 
@@ -265,7 +285,7 @@ func (c *Controller) processNextWorkItem(q workqueue.RateLimitingInterface, sync
 func (c *Controller) synchronizeResource(key string, sync resourceSynchronizationHandler) error {
 	ok, obj, err := sync(key)
 	if err != nil {
-		// Append a warning to the instance
+		// Append a warning to the resource
 		if obj != nil {
 			c.recorder.Event(obj, corev1.EventTypeWarning, ErrResourceExists, err.Error())
 		}
@@ -275,6 +295,7 @@ func (c *Controller) synchronizeResource(key string, sync resourceSynchronizatio
 	// Record a successful sync
 	//
 	if ok {
+		glog.Infof("Successfully synced %s '%s'", obj.GetObjectKind().GroupVersionKind().Kind, key)
 		c.recorder.Event(obj, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	}
 
@@ -293,12 +314,12 @@ func (c *Controller) enqueueResource(obj interface{}, q workqueue.RateLimitingIn
 	q.AddRateLimited(key)
 }
 
-// handleSvcatResource will take any resource implementing metav1.Object and attempt
+// handleManagedResource will take any resource implementing metav1.Object and attempt
 // to find the shadow resource that 'owns' it. It does this by looking at the
 // objects metadata.ownerReferences field for an appropriate OwnerReference.
 // It then enqueues that resource to be processed. If the object does not
 // have an appropriate OwnerReference, it will simply be skipped.
-func (c *Controller) handleSvcatResource(obj interface{}) {
+func (c *Controller) handleManagedResource(obj interface{}) {
 	var object metav1.Object
 	var ok bool
 	if object, ok = obj.(metav1.Object); !ok {

@@ -4,15 +4,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/peterbourgon/mergemap"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	templates "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 
 	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+)
+
+const (
+	// SecretSuffix is the suffix applied to a secret name to build the service catalog managed secret name.
+	SecretSuffix = "-template"
 )
 
 func BuildServiceInstance(instance templates.CatalogInstance, template templates.InstanceTemplate) (*svcat.ServiceInstance, error) {
@@ -31,11 +38,7 @@ func BuildServiceInstance(instance templates.CatalogInstance, template templates
 			Name:      finalInstance.Name,
 			Namespace: finalInstance.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(finalInstance, schema.GroupVersionKind{
-					Group:   templates.SchemeGroupVersion.Group,
-					Version: templates.SchemeGroupVersion.Version,
-					Kind:    templates.InstanceKind,
-				}),
+				*metav1.NewControllerRef(finalInstance, templates.SchemeGroupVersion.WithKind(templates.InstanceKind)),
 			},
 		},
 		Spec: svcat.ServiceInstanceSpec{
@@ -51,30 +54,38 @@ func BuildServiceInstance(instance templates.CatalogInstance, template templates
 	}, nil
 }
 
-func BuildServiceBinding(binding templates.CatalogBinding, template templates.BindingTemplate) (*svcat.ServiceBinding, error) {
-	finalBinding, err := mergeTemplateWithBinding(binding, template)
-	if err != nil {
-		return nil, err
-	}
-
+func BuildServiceBinding(binding templates.CatalogBinding) *svcat.ServiceBinding {
 	return &svcat.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      finalBinding.Name,
-			Namespace: finalBinding.Namespace,
+			Name:      binding.Name,
+			Namespace: binding.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(finalBinding, schema.GroupVersionKind{
-					Group:   templates.SchemeGroupVersion.Group,
-					Version: templates.SchemeGroupVersion.Version,
-					Kind:    templates.BindingKind,
-				}),
+				*metav1.NewControllerRef(&binding, templates.SchemeGroupVersion.WithKind(templates.BindingKind)),
 			},
 		},
 		Spec: svcat.ServiceBindingSpec{
-			ServiceInstanceRef: finalBinding.Spec.InstanceRef,
-			Parameters:         finalBinding.Spec.Parameters,
-			ParametersFrom:     finalBinding.Spec.ParametersFrom,
+			ServiceInstanceRef: binding.Spec.InstanceRef,
+			Parameters:         binding.Spec.Parameters,
+			ParametersFrom:     binding.Spec.ParametersFrom,
+			SecretName:         toSVCSecretName(binding.Spec.SecretName),
 		},
-	}, nil
+	}
+}
+
+func BuildShadowSecret(secret *core.Secret, binding templates.CatalogBinding) (*core.Secret, error) {
+	shadowSecret := &core.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      toShadowSecretName(secret.Name),
+			Namespace: secret.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(secret, core.SchemeGroupVersion.WithKind("Secret")),
+			},
+		},
+		Type: secret.Type,
+		Data: mapSecretKeys(binding.Spec.SecretKeys, secret.Data),
+	}
+
+	return shadowSecret, nil
 }
 
 func RefreshServiceInstance(inst *templates.CatalogInstance, svcInst *svcat.ServiceInstance) *svcat.ServiceInstance {
@@ -104,6 +115,27 @@ func RefreshServiceBinding(bnd *templates.CatalogBinding, svcBnd *svcat.ServiceB
 	return svcBnd
 }
 
+func RefreshSecret(svcSecret core.Secret, secret core.Secret) (*core.Secret, bool) {
+	// TODO: Sync all fields
+
+	if reflect.DeepEqual(svcSecret.Data, secret.Data) {
+		return nil, false
+	}
+
+	updatedSecret := secret.DeepCopy()
+	updatedSecret.Data = svcSecret.Data
+
+	return updatedSecret, true
+}
+
+func toSVCSecretName(name string) string {
+	return name + SecretSuffix
+}
+
+func toShadowSecretName(name string) string {
+	return strings.TrimRight(name, SecretSuffix)
+}
+
 func mergeTemplateWithInstance(instance templates.CatalogInstance, template templates.InstanceTemplate) (*templates.CatalogInstance, error) {
 	finalInstance := instance.DeepCopy()
 
@@ -125,8 +157,13 @@ func mergeTemplateWithInstance(instance templates.CatalogInstance, template temp
 	return finalInstance, nil
 }
 
-func mergeTemplateWithBinding(binding templates.CatalogBinding, template templates.BindingTemplate) (*templates.CatalogBinding, error) {
+func ApplyBindingTemplate(binding templates.CatalogBinding, template templates.BindingTemplate) (*templates.CatalogBinding, error) {
 	finalBinding := binding.DeepCopy()
+
+	// Default the secret name to the instance name, if empty
+	if finalBinding.Spec.SecretName == "" {
+		finalBinding.Spec.SecretName = finalBinding.Spec.InstanceRef.Name
+	}
 
 	var err error
 	finalBinding.Spec.Parameters, err = mergeParameters(finalBinding.Spec.Parameters, template.Spec.Parameters)
@@ -192,6 +229,20 @@ func mergeSecretKeys(bndKeys map[string]string, tmplKeys map[string]string) map[
 	}
 
 	return mergedKeys
+}
+
+func mapSecretKeys(keys map[string]string, data map[string][]byte) map[string][]byte {
+	mappedData := make(map[string][]byte, len(data))
+
+	for k, v := range data {
+		if mappedKey, ok := keys[k]; ok {
+			k = mappedKey
+		}
+
+		mappedData[k] = v
+	}
+
+	return mappedData
 }
 
 func selectParametersFromSource(instParams []svcat.ParametersFromSource, tmplParams []svcat.ParametersFromSource) []svcat.ParametersFromSource {
