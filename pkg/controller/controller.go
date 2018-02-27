@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Azure/service-catalog-templates/pkg/kubernetes/coresdk"
+	"github.com/Azure/service-catalog-templates/pkg/sdk"
+	"github.com/Azure/service-catalog-templates/pkg/svcatsdk"
 	"github.com/golang/glog"
 
 	corev1 "k8s.io/api/core/v1"
@@ -11,22 +14,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	util "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	coreinformers "k8s.io/client-go/informers"
-	coreclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	templatesclient "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	templatesscheme "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned/scheme"
-	templatesinformers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions"
 	"github.com/Azure/service-catalog-templates/pkg/svcatt"
 
 	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	svcatinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 )
 
 const controllerAgentName = "service-catalog-templates"
@@ -48,12 +45,9 @@ const (
 type Controller struct {
 	synchronizer *svcatt.Synchronizer
 
-	coreClient           coreclient.Interface
-	instancesSynced      cache.InformerSynced
-	svcatInstancesSynced cache.InformerSynced
-	bindingsSynced       cache.InformerSynced
-	svcatBindingsSynced  cache.InformerSynced
-	secretsSynced        cache.InformerSynced
+	coreSDK     *coresdk.SDK
+	templateSDK *sdk.SDK
+	svcatSDK    *svcatsdk.SDK
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -70,24 +64,7 @@ type Controller struct {
 }
 
 // NewController returns a new sample controller
-func NewController(
-	coreClient coreclient.Interface,
-	svcatClient svcatclient.Interface,
-	templatesClient templatesclient.Interface,
-	coreInformerFactory coreinformers.SharedInformerFactory,
-	svcatInformerFactory svcatinformers.SharedInformerFactory,
-	templatesInformerFactory templatesinformers.SharedInformerFactory) *Controller {
-
-	// obtain references to shared index templatesinformers for the Deployment and Instance
-	// types.
-	templatesInformers := templatesInformerFactory.Templates().Experimental()
-	instanceInformer := templatesInformers.TemplatedInstances().Informer()
-	bindingInformer := templatesInformers.TemplatedBindings().Informer()
-	svcatInformers := svcatInformerFactory.Servicecatalog().V1beta1()
-	svcatInstanceInformer := svcatInformers.ServiceInstances().Informer()
-	svcatBindingInformer := svcatInformers.ServiceBindings().Informer()
-	coreInformers := coreInformerFactory.Core().V1()
-	secretInformer := coreInformers.Secrets().Informer()
+func NewController(coreSDK *coresdk.SDK, templateSDK *sdk.SDK, svcatSDK *svcatsdk.SDK) *Controller {
 
 	// Create event broadcaster
 	// Add service-catalog-templates-controller types to the default Kubernetes Scheme so Events can be
@@ -96,27 +73,24 @@ func NewController(
 	glog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.Infof)
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: coreClient.CoreV1().Events("")})
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: coreSDK.Core().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	c := &Controller{
-		coreClient:           coreClient,
-		synchronizer:         svcatt.NewSynchronizer(coreClient, templatesClient, svcatClient, coreInformers, templatesInformers, svcatInformers),
-		instancesSynced:      instanceInformer.HasSynced,
-		bindingsSynced:       bindingInformer.HasSynced,
-		secretsSynced:        secretInformer.HasSynced,
-		svcatInstancesSynced: svcatInstanceInformer.HasSynced,
-		svcatBindingsSynced:  svcatBindingInformer.HasSynced,
-		instanceQ:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Instances"),
-		bindingQ:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Bindings"),
-		secretQ:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Secrets"),
-		recorder:             recorder,
+		coreSDK:      coreSDK,
+		templateSDK:  templateSDK,
+		svcatSDK:     svcatSDK,
+		synchronizer: svcatt.NewSynchronizer(coreSDK, templateSDK, svcatSDK),
+		instanceQ:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Instances"),
+		bindingQ:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Bindings"),
+		secretQ:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Secrets"),
+		recorder:     recorder,
 	}
 
 	glog.Info("Setting up event handlers")
 
 	// Set up an event handler for when shadow resources change
-	instanceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	templateSDK.Cache().TemplatedInstances().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			c.enqueueResource(obj, c.instanceQ)
 		},
@@ -124,7 +98,7 @@ func NewController(
 			c.enqueueResource(new, c.instanceQ)
 		},
 	})
-	bindingInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	templateSDK.Cache().TemplatedBindings().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			c.enqueueResource(obj, c.bindingQ)
 		},
@@ -132,7 +106,7 @@ func NewController(
 			c.enqueueResource(new, c.bindingQ)
 		},
 	})
-	secretInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	coreSDK.Cache().Secrets().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			c.enqueueResource(obj, c.secretQ)
 		},
@@ -147,7 +121,7 @@ func NewController(
 	// processing. This way, we don't need to implement custom logic for
 	// handling managed resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
-	svcatInstanceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	svcatSDK.Cache().ServiceInstances().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: c.handleManagedResource,
 		UpdateFunc: func(old, new interface{}) {
 			newInst := new.(*svcat.ServiceInstance)
@@ -161,7 +135,7 @@ func NewController(
 		},
 		DeleteFunc: c.handleManagedResource,
 	})
-	svcatBindingInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	svcatSDK.Cache().ServiceBindings().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: c.handleManagedResource,
 		UpdateFunc: func(old, new interface{}) {
 			newBnd := new.(*svcat.ServiceBinding)
@@ -191,18 +165,6 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 
 	// Start the informer factories to begin populating the informer caches
 	glog.Info("Starting Templates controller")
-
-	// Wait for the caches to be synced before starting workers
-	glog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh,
-		c.secretsSynced,
-		c.svcatInstancesSynced, c.instancesSynced,
-		c.svcatBindingsSynced, c.bindingsSynced); !ok {
-		return fmt.Errorf("failed to wait for informer caches to sync")
-	}
-
-	glog.Info("Starting workers")
-	// Launch two workers to process resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(func() {
 			for c.processNextWorkItem(c.instanceQ, c.synchronizer.SynchronizeInstance) {

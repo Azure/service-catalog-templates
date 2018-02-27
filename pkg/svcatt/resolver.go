@@ -3,41 +3,37 @@ package svcatt
 import (
 	"fmt"
 
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/Azure/service-catalog-templates/pkg/sdk"
+	"github.com/Azure/service-catalog-templates/pkg/svcatsdk"
 	"k8s.io/apimachinery/pkg/labels"
 
 	templates "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
-	templatesclient "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
-
 	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 )
 
 type resolver struct {
-	templatesClient templatesclient.Interface
-	svcatClient     svcatclient.Interface
+	sdk      *sdk.SDK
+	svcatSDK *svcatsdk.SDK
 }
 
-func newResolver(templatesClient templatesclient.Interface, svcatClient svcatclient.Interface) *resolver {
+func newResolver(sdk *sdk.SDK, svcatSDK *svcatsdk.SDK) *resolver {
 	return &resolver{
-		templatesClient: templatesClient,
-		svcatClient:     svcatClient,
+		sdk:      sdk,
+		svcatSDK: svcatSDK,
 	}
 }
 
 func (r *resolver) ResolveInstanceTemplate(instance templates.TemplatedInstance) (*templates.InstanceTemplate, error) {
-	opts := meta.ListOptions{
-		LabelSelector: labels.FormatLabels(map[string]string{templates.FieldServiceTypeName: instance.Spec.ServiceType}),
-	}
-	results, err := r.templatesClient.TemplatesExperimental().InstanceTemplates(instance.Namespace).List(opts)
+	opts := labels.SelectorFromSet(map[string]string{templates.FieldServiceTypeName: instance.Spec.ServiceType})
+	results, err := r.sdk.InstanceTemplateCache().InstanceTemplates(instance.Namespace).List(opts)
 	if err != nil {
 		return nil, err
 	}
-	if len(results.Items) == 0 {
+	if len(results) == 0 {
 		return nil, fmt.Errorf("unable to resolve an instance template for service type: %s", instance.Spec.ServiceType)
 	}
 
-	template := results.Items[0]
+	template := results[0].DeepCopy()
 
 	// TODO: if a plan selector is specified, pick a different plan from the template's default
 	if instance.Spec.PlanSelector != nil {
@@ -50,28 +46,26 @@ func (r *resolver) ResolveInstanceTemplate(instance templates.TemplatedInstance)
 		template.Spec.PlanExternalName = resolvedPlan.Spec.ExternalName
 	}
 
-	return &template, nil
+	return template, nil
 }
 
 func (r *resolver) ResolveBindingTemplate(binding templates.TemplatedBinding) (*templates.BindingTemplate, error) {
-	inst, err := r.templatesClient.TemplatesExperimental().TemplatedInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name, meta.GetOptions{})
+	inst, err := r.sdk.GetInstanceFromCache(binding.Namespace, binding.Spec.InstanceRef.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	opts := meta.ListOptions{
-		LabelSelector: labels.FormatLabels(map[string]string{templates.FieldServiceTypeName: inst.Spec.ServiceType}),
-	}
-	results, err := r.templatesClient.TemplatesExperimental().BindingTemplates(binding.Namespace).List(opts)
+	opts := labels.SelectorFromSet(map[string]string{templates.FieldServiceTypeName: inst.Spec.ServiceType})
+	results, err := r.sdk.BindingTemplateCache().BindingTemplates(binding.Namespace).List(opts)
 	if err != nil {
 		return nil, err
 	}
-	if len(results.Items) == 0 {
+	if len(results) == 0 {
 		return nil, fmt.Errorf("unable to resolve a binding template for service type: %s", inst.Spec.ServiceType)
 	}
 
-	template := results.Items[0]
-	return &template, nil
+	template := results[0].DeepCopy()
+	return template, nil
 }
 
 func (r *resolver) ResolvePlan(instance templates.TemplatedInstance) (*svcat.ClusterServiceClass, *svcat.ClusterServicePlan, error) {

@@ -4,7 +4,11 @@ import (
 	"flag"
 	"time"
 
+	"github.com/Azure/service-catalog-templates/pkg/kubernetes/coresdk"
+	"github.com/Azure/service-catalog-templates/pkg/sdk"
+	"github.com/Azure/service-catalog-templates/pkg/svcatsdk"
 	"github.com/golang/glog"
+	"golang.org/x/sync/errgroup"
 	coreinformers "k8s.io/client-go/informers"
 	coreclient "k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -54,11 +58,21 @@ func main() {
 	svcatInformerFactory := svcatinformers.NewSharedInformerFactory(svcatClient, duration)
 	templatesInformerFactory := informers.NewSharedInformerFactory(templatesClient, duration)
 
-	controller := controller.NewController(coreClient, svcatClient, templatesClient, coreInformerFactory, svcatInformerFactory, templatesInformerFactory)
+	coreSDK := coresdk.New(coreClient, coreInformerFactory)
+	templateSDK := sdk.New(templatesClient, templatesInformerFactory)
+	svcatSDK := svcatsdk.New(svcatClient, svcatInformerFactory)
 
-	go coreInformerFactory.Start(stopCh)
-	go svcatInformerFactory.Start(stopCh)
-	go templatesInformerFactory.Start(stopCh)
+	// Wait for the caches to be synced before starting
+	glog.Info("Initializing...")
+	var initG errgroup.Group
+	initG.Go(func() error { return coreSDK.Init(stopCh) })
+	initG.Go(func() error { return svcatSDK.Init(stopCh) })
+	initG.Go(func() error { return templateSDK.Init(stopCh) })
+	if err := initG.Wait(); err != nil {
+		glog.Fatalf("Error initializing informer caches: %s", err)
+	}
+
+	controller := controller.NewController(coreSDK, templateSDK, svcatSDK)
 
 	if err = controller.Run(2, stopCh); err != nil {
 		glog.Fatalf("Error running controller: %s", err.Error())
