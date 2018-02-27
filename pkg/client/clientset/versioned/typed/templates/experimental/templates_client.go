@@ -10,9 +10,9 @@ import (
 type TemplatesExperimentalInterface interface {
 	RESTClient() rest.Interface
 	BindingTemplatesGetter
-	CatalogBindingsGetter
-	CatalogInstancesGetter
 	InstanceTemplatesGetter
+	TemplatedBindingsGetter
+	TemplatedInstancesGetter
 }
 
 // TemplatesExperimentalClient is used to interact with features provided by the templates.servicecatalog.k8s.io group.
@@ -24,16 +24,16 @@ func (c *TemplatesExperimentalClient) BindingTemplates(namespace string) Binding
 	return newBindingTemplates(c, namespace)
 }
 
-func (c *TemplatesExperimentalClient) CatalogBindings(namespace string) CatalogBindingInterface {
-	return newCatalogBindings(c, namespace)
-}
-
-func (c *TemplatesExperimentalClient) CatalogInstances(namespace string) CatalogInstanceInterface {
-	return newCatalogInstances(c, namespace)
-}
-
 func (c *TemplatesExperimentalClient) InstanceTemplates(namespace string) InstanceTemplateInterface {
 	return newInstanceTemplates(c, namespace)
+}
+
+func (c *TemplatesExperimentalClient) TemplatedBindings(namespace string) TemplatedBindingInterface {
+	return newTemplatedBindings(c, namespace)
+}
+
+func (c *TemplatesExperimentalClient) TemplatedInstances(namespace string) TemplatedInstanceInterface {
+	return newTemplatedInstances(c, namespace)
 }
 
 // NewForConfig creates a new TemplatesExperimentalClient for the given config.

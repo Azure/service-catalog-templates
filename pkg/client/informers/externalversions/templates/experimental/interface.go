@@ -10,12 +10,12 @@ import (
 type Interface interface {
 	// BindingTemplates returns a BindingTemplateInformer.
 	BindingTemplates() BindingTemplateInformer
-	// CatalogBindings returns a CatalogBindingInformer.
-	CatalogBindings() CatalogBindingInformer
-	// CatalogInstances returns a CatalogInstanceInformer.
-	CatalogInstances() CatalogInstanceInformer
 	// InstanceTemplates returns a InstanceTemplateInformer.
 	InstanceTemplates() InstanceTemplateInformer
+	// TemplatedBindings returns a TemplatedBindingInformer.
+	TemplatedBindings() TemplatedBindingInformer
+	// TemplatedInstances returns a TemplatedInstanceInformer.
+	TemplatedInstances() TemplatedInstanceInformer
 }
 
 type version struct {
@@ -34,17 +34,17 @@ func (v *version) BindingTemplates() BindingTemplateInformer {
 	return &bindingTemplateInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// CatalogBindings returns a CatalogBindingInformer.
-func (v *version) CatalogBindings() CatalogBindingInformer {
-	return &catalogBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// CatalogInstances returns a CatalogInstanceInformer.
-func (v *version) CatalogInstances() CatalogInstanceInformer {
-	return &catalogInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // InstanceTemplates returns a InstanceTemplateInformer.
 func (v *version) InstanceTemplates() InstanceTemplateInformer {
 	return &instanceTemplateInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// TemplatedBindings returns a TemplatedBindingInformer.
+func (v *version) TemplatedBindings() TemplatedBindingInformer {
+	return &templatedBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// TemplatedInstances returns a TemplatedInstanceInformer.
+func (v *version) TemplatedInstances() TemplatedInstanceInformer {
+	return &templatedInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

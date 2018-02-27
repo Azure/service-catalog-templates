@@ -39,12 +39,12 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=templates.servicecatalog.k8s.io, Version=experimental
 	case experimental.SchemeGroupVersion.WithResource("bindingtemplates"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Templates().Experimental().BindingTemplates().Informer()}, nil
-	case experimental.SchemeGroupVersion.WithResource("catalogbindings"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Templates().Experimental().CatalogBindings().Informer()}, nil
-	case experimental.SchemeGroupVersion.WithResource("cataloginstances"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Templates().Experimental().CatalogInstances().Informer()}, nil
 	case experimental.SchemeGroupVersion.WithResource("instancetemplates"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Templates().Experimental().InstanceTemplates().Informer()}, nil
+	case experimental.SchemeGroupVersion.WithResource("templatedbindings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Templates().Experimental().TemplatedBindings().Informer()}, nil
+	case experimental.SchemeGroupVersion.WithResource("templatedinstances"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Templates().Experimental().TemplatedInstances().Informer()}, nil
 
 	}
 

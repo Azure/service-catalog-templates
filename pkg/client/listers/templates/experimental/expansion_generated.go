@@ -10,22 +10,6 @@ type BindingTemplateListerExpansion interface{}
 // BindingTemplateNamespaceLister.
 type BindingTemplateNamespaceListerExpansion interface{}
 
-// CatalogBindingListerExpansion allows custom methods to be added to
-// CatalogBindingLister.
-type CatalogBindingListerExpansion interface{}
-
-// CatalogBindingNamespaceListerExpansion allows custom methods to be added to
-// CatalogBindingNamespaceLister.
-type CatalogBindingNamespaceListerExpansion interface{}
-
-// CatalogInstanceListerExpansion allows custom methods to be added to
-// CatalogInstanceLister.
-type CatalogInstanceListerExpansion interface{}
-
-// CatalogInstanceNamespaceListerExpansion allows custom methods to be added to
-// CatalogInstanceNamespaceLister.
-type CatalogInstanceNamespaceListerExpansion interface{}
-
 // InstanceTemplateListerExpansion allows custom methods to be added to
 // InstanceTemplateLister.
 type InstanceTemplateListerExpansion interface{}
@@ -33,3 +17,19 @@ type InstanceTemplateListerExpansion interface{}
 // InstanceTemplateNamespaceListerExpansion allows custom methods to be added to
 // InstanceTemplateNamespaceLister.
 type InstanceTemplateNamespaceListerExpansion interface{}
+
+// TemplatedBindingListerExpansion allows custom methods to be added to
+// TemplatedBindingLister.
+type TemplatedBindingListerExpansion interface{}
+
+// TemplatedBindingNamespaceListerExpansion allows custom methods to be added to
+// TemplatedBindingNamespaceLister.
+type TemplatedBindingNamespaceListerExpansion interface{}
+
+// TemplatedInstanceListerExpansion allows custom methods to be added to
+// TemplatedInstanceLister.
+type TemplatedInstanceListerExpansion interface{}
+
+// TemplatedInstanceNamespaceListerExpansion allows custom methods to be added to
+// TemplatedInstanceNamespaceLister.
+type TemplatedInstanceNamespaceListerExpansion interface{}

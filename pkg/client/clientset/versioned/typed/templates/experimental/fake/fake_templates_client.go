@@ -14,16 +14,16 @@ func (c *FakeTemplatesExperimental) BindingTemplates(namespace string) experimen
 	return &FakeBindingTemplates{c, namespace}
 }
 
-func (c *FakeTemplatesExperimental) CatalogBindings(namespace string) experimental.CatalogBindingInterface {
-	return &FakeCatalogBindings{c, namespace}
-}
-
-func (c *FakeTemplatesExperimental) CatalogInstances(namespace string) experimental.CatalogInstanceInterface {
-	return &FakeCatalogInstances{c, namespace}
-}
-
 func (c *FakeTemplatesExperimental) InstanceTemplates(namespace string) experimental.InstanceTemplateInterface {
 	return &FakeInstanceTemplates{c, namespace}
+}
+
+func (c *FakeTemplatesExperimental) TemplatedBindings(namespace string) experimental.TemplatedBindingInterface {
+	return &FakeTemplatedBindings{c, namespace}
+}
+
+func (c *FakeTemplatesExperimental) TemplatedInstances(namespace string) experimental.TemplatedInstanceInterface {
+	return &FakeTemplatedInstances{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
