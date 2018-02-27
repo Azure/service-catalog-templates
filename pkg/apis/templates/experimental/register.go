@@ -45,10 +45,10 @@ var (
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&CatalogBinding{},
-		&CatalogBindingList{},
-		&CatalogInstance{},
-		&CatalogInstanceList{},
+		&TemplatedBinding{},
+		&TemplatedBindingList{},
+		&TemplatedInstance{},
+		&TemplatedInstanceList{},
 		&BindingTemplate{},
 		&BindingTemplateList{},
 		&InstanceTemplate{},

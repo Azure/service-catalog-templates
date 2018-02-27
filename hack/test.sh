@@ -11,9 +11,11 @@ kubectl get bindingtemplates
 kubectl get bndt
 
 kubectl apply -f contrib/examples/instance.yaml
-kubectl get cataloginstances
-kubectl get cinst
+kubectl get templatedinstances
+kubectl get tinst
 
 kubectl apply -f contrib/examples/binding.yaml
-kubectl get catalogbindings
-kubectl get cbnd
+kubectl get templatedbindings
+kubectl get tbnd
+
+watch kubectl get secret testdb-creds

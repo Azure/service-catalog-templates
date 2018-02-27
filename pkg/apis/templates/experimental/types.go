@@ -31,8 +31,8 @@ const (
 )
 
 var (
-	InstanceKind = strings.Split(fmt.Sprintf("%T", CatalogInstance{}), ".")[1]
-	BindingKind  = strings.Split(fmt.Sprintf("%T", CatalogBinding{}), ".")[1]
+	InstanceKind = strings.Split(fmt.Sprintf("%T", TemplatedInstance{}), ".")[1]
+	BindingKind  = strings.Split(fmt.Sprintf("%T", TemplatedBinding{}), ".")[1]
 )
 
 // +genclient
@@ -82,17 +82,17 @@ type InstanceTemplateList struct {
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// CatalogInstance is a specification for a CatalogInstance resource
-type CatalogInstance struct {
+// TemplatedInstance is a specification for a TemplatedInstance resource
+type TemplatedInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CatalogInstanceSpec   `json:"spec"`
-	Status CatalogInstanceStatus `json:"status"`
+	Spec   TemplatedInstanceSpec   `json:"spec"`
+	Status TemplatedInstanceStatus `json:"status"`
 }
 
-// CatalogInstanceSpec is the spec for a CatalogInstance resource
-type CatalogInstanceSpec struct {
+// TemplatedInstanceSpec is the spec for a TemplatedInstance resource
+type TemplatedInstanceSpec struct {
 	ServiceType string `json:"serviceType"`
 
 	// +optional
@@ -120,8 +120,8 @@ type CatalogInstanceSpec struct {
 	UpdateRequests int64 `json:"updateRequests"`
 }
 
-// CatalogInstanceStatus is the status for a CatalogInstance resource
-type CatalogInstanceStatus struct {
+// TemplatedInstanceStatus is the status for a TemplatedInstance resource
+type TemplatedInstanceStatus struct {
 	ResolvedClass svcat.ObjectReference `json:"resolvedClass"`
 	ResolvedPlan  svcat.ObjectReference `json:"resolvedPlan"`
 	// TODO: parameters
@@ -129,12 +129,12 @@ type CatalogInstanceStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// CatalogInstanceList is a list of CatalogInstance resources
-type CatalogInstanceList struct {
+// TemplatedInstanceList is a list of TemplatedInstance resources
+type TemplatedInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []CatalogInstance `json:"items"`
+	Items []TemplatedInstance `json:"items"`
 }
 
 // +genclient
@@ -183,17 +183,17 @@ type BindingTemplateList struct {
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// CatalogBinding is a specification for a CatalogBinding resource
-type CatalogBinding struct {
+// TemplatedBinding is a specification for a TemplatedBinding resource
+type TemplatedBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CatalogBindingSpec   `json:"spec"`
-	Status CatalogBindingStatus `json:"status"`
+	Spec   TemplatedBindingSpec   `json:"spec"`
+	Status TemplatedBindingStatus `json:"status"`
 }
 
-// CatalogBindingSpec is the spec for a CatalogBinding resource
-type CatalogBindingSpec struct {
+// TemplatedBindingSpec is the spec for a TemplatedBinding resource
+type TemplatedBindingSpec struct {
 	// Immutable.
 	InstanceRef svcat.LocalObjectReference `json:"instanceRef"`
 
@@ -213,17 +213,17 @@ type CatalogBindingSpec struct {
 	ExternalID string `json:"externalID,omitempty"`
 }
 
-// CatalogBindingStatus is the status for a CatalogBinding resource
-type CatalogBindingStatus struct {
+// TemplatedBindingStatus is the status for a TemplatedBinding resource
+type TemplatedBindingStatus struct {
 	// TODO: parameters, secretKeys
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// CatalogBindingList is a list of CatalogBinding resources
-type CatalogBindingList struct {
+// TemplatedBindingList is a list of TemplatedBinding resources
+type TemplatedBindingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []CatalogBinding `json:"items"`
+	Items []TemplatedBinding `json:"items"`
 }

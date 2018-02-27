@@ -39,8 +39,8 @@ type Synchronizer struct {
 	svcatClient     svcatclient.Interface
 
 	secretLister          corelisters.SecretLister
-	instanceLister        templateslisters.CatalogInstanceLister
-	bindingLister         templateslisters.CatalogBindingLister
+	instanceLister        templateslisters.TemplatedInstanceLister
+	bindingLister         templateslisters.TemplatedBindingLister
 	bindingTemplateLister templateslisters.BindingTemplateLister
 	svcatInstanceLister   svcatlisters.ServiceInstanceLister
 	svcatBindingLister    svcatlisters.ServiceBindingLister
@@ -53,8 +53,8 @@ func NewSynchronizer(coreClient coreclient.Interface, templatesClient templatesc
 		templatesClient:       templatesClient,
 		svcatClient:           svcatClient,
 		secretLister:          coreInformers.Secrets().Lister(),
-		instanceLister:        templatesInformers.CatalogInstances().Lister(),
-		bindingLister:         templatesInformers.CatalogBindings().Lister(),
+		instanceLister:        templatesInformers.TemplatedInstances().Lister(),
+		bindingLister:         templatesInformers.TemplatedBindings().Lister(),
 		bindingTemplateLister: templatesInformers.BindingTemplates().Lister(),
 		svcatInstanceLister:   svcatInformers.ServiceInstances().Lister(),
 		svcatBindingLister:    svcatInformers.ServiceBindings().Lister(),
@@ -73,14 +73,14 @@ func (s *Synchronizer) IsManaged(object metav1.Object) bool {
 	// Try to retrieve the resource that is shadowing the service catalog resource
 	switch owner.Kind {
 	case templates.BindingKind:
-		_, err := s.bindingLister.CatalogBindings(object.GetNamespace()).Get(owner.Name)
+		_, err := s.bindingLister.TemplatedBindings(object.GetNamespace()).Get(owner.Name)
 		if err != nil {
 			glog.V(4).Infof("ignoring orphaned object '%s' of %s '%s'", object.GetSelfLink(), owner.Kind, owner.Name)
 			return false
 		}
 		return true
 	case templates.InstanceKind:
-		_, err := s.instanceLister.CatalogInstances(object.GetNamespace()).Get(owner.Name)
+		_, err := s.instanceLister.TemplatedInstances(object.GetNamespace()).Get(owner.Name)
 		if err != nil {
 			glog.V(4).Infof("ignoring orphaned object '%s' of %s '%s'", object.GetSelfLink(), owner.Kind, owner.Name)
 			return false
@@ -118,10 +118,10 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 		return false, nil, nil
 	}
 
-	// Get the CatalogInstance resource with this namespace/name
-	cachedInst, err := s.instanceLister.CatalogInstances(namespace).Get(name)
+	// Get the TemplatedInstance resource with this namespace/name
+	cachedInst, err := s.instanceLister.TemplatedInstances(namespace).Get(name)
 	if err != nil {
-		// The CatalogInstance resource may no longer exist, in which case we stop
+		// The TemplatedInstance resource may no longer exist, in which case we stop
 		// processing.
 		if errors.IsNotFound(err) {
 			util.HandleError(fmt.Errorf("instance '%s' in work queue no longer exists", key))
@@ -181,7 +181,7 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 
 	// TODO: Detect when the plan must be re-resolved
 
-	// If this number of the replicas on the CatalogInstance resource is specified, and the
+	// If this number of the replicas on the TemplatedInstance resource is specified, and the
 	// number does not equal the current desired replicas on the Deployment, we
 	// should update the Deployment resource.
 	if inst.Spec.Parameters != nil && (svcInst.Spec.Parameters == nil || string(inst.Spec.Parameters.Raw) != string(svcInst.Spec.Parameters.Raw)) {
@@ -200,7 +200,7 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 	//
 	// Update shadow instance status with the service instance state
 	//
-	// Finally, we update the status block of the CatalogInstance resource to reflect the
+	// Finally, we update the status block of the TemplatedInstance resource to reflect the
 	// current state of the world
 	err = s.updateInstanceStatus(inst, svcInst)
 	if err != nil {
@@ -210,17 +210,17 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 	return true, inst, nil
 }
 
-func (s *Synchronizer) updateInstanceStatus(inst *templates.CatalogInstance, svcInst *svcat.ServiceInstance) error {
+func (s *Synchronizer) updateInstanceStatus(inst *templates.TemplatedInstance, svcInst *svcat.ServiceInstance) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	instCopy := inst.DeepCopy()
 	// TODO: add resolved fields to the status
 	// Until #38113 is merged, we must use Update instead of UpdateStatus to
-	// update the Status block of the CatalogInstance resource. UpdateStatus will not
+	// update the Status block of the TemplatedInstance resource. UpdateStatus will not
 	// allow changes to the Spec of the resource, which is ideal for ensuring
 	// nothing other than resource status has been updated.
-	_, err := s.templatesClient.TemplatesExperimental().CatalogInstances(inst.Namespace).Update(instCopy)
+	_, err := s.templatesClient.TemplatesExperimental().TemplatedInstances(inst.Namespace).Update(instCopy)
 	return err
 }
 
@@ -242,7 +242,7 @@ func (s *Synchronizer) SynchronizeBinding(key string) (bool, runtime.Object, err
 	}
 
 	// Get the resource with this namespace/name
-	cachedBnd, err := s.bindingLister.CatalogBindings(namespace).Get(name)
+	cachedBnd, err := s.bindingLister.TemplatedBindings(namespace).Get(name)
 	if err != nil {
 		// The resource may no longer exist, in which case we stop
 		// processing.
@@ -284,7 +284,7 @@ func (s *Synchronizer) SynchronizeBinding(key string) (bool, runtime.Object, err
 			return false, bnd, err
 		}
 
-		bnd, err = s.templatesClient.TemplatesExperimental().CatalogBindings(bnd.Namespace).Update(bnd)
+		bnd, err = s.templatesClient.TemplatesExperimental().TemplatedBindings(bnd.Namespace).Update(bnd)
 		if err != nil {
 			return false, bnd, err
 		}
@@ -336,17 +336,17 @@ func (s *Synchronizer) SynchronizeBinding(key string) (bool, runtime.Object, err
 	return true, bnd, nil
 }
 
-func (s *Synchronizer) updateBindingStatus(bnd *templates.CatalogBinding, svcBnd *svcat.ServiceBinding) error {
+func (s *Synchronizer) updateBindingStatus(bnd *templates.TemplatedBinding, svcBnd *svcat.ServiceBinding) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	bndCopy := bnd.DeepCopy()
 	// TODO: add resolved fields to the status
 	// Until #38113 is merged, we must use Update instead of UpdateStatus to
-	// update the Status block of the CatalogInstance resource. UpdateStatus will not
+	// update the Status block of the TemplatedInstance resource. UpdateStatus will not
 	// allow changes to the Spec of the resource, which is ideal for ensuring
 	// nothing other than resource status has been updated.
-	_, err := s.templatesClient.TemplatesExperimental().CatalogBindings(bnd.Namespace).Update(bndCopy)
+	_, err := s.templatesClient.TemplatesExperimental().TemplatedBindings(bnd.Namespace).Update(bndCopy)
 	return err
 }
 
@@ -413,7 +413,7 @@ func (s *Synchronizer) SynchronizeSecret(key string) (bool, runtime.Object, erro
 			// Ignore unmanaged resources
 			return false, nil, nil
 		}
-		bnd, err := s.bindingLister.CatalogBindings(svcBnd.Namespace).Get(ownerBnd.Name)
+		bnd, err := s.bindingLister.TemplatedBindings(svcBnd.Namespace).Get(ownerBnd.Name)
 		if err != nil {
 			return false, svcSecret, err
 		}

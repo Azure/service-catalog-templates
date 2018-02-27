@@ -1,5 +1,5 @@
 apiVersion: templates.servicecatalog.k8s.io/experimental
-kind: CatalogBinding
+kind: TemplatedBinding
 metadata:
   name: testdb
   namespace: default

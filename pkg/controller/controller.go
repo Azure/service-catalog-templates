@@ -81,8 +81,8 @@ func NewController(
 	// obtain references to shared index templatesinformers for the Deployment and Instance
 	// types.
 	templatesInformers := templatesInformerFactory.Templates().Experimental()
-	instanceInformer := templatesInformers.CatalogInstances().Informer()
-	bindingInformer := templatesInformers.CatalogBindings().Informer()
+	instanceInformer := templatesInformers.TemplatedInstances().Informer()
+	bindingInformer := templatesInformers.TemplatedBindings().Informer()
 	svcatInformers := svcatInformerFactory.Servicecatalog().V1beta1()
 	svcatInstanceInformer := svcatInformers.ServiceInstances().Informer()
 	svcatBindingInformer := svcatInformers.ServiceBindings().Informer()

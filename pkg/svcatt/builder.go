@@ -22,7 +22,7 @@ const (
 	SecretSuffix = "-template"
 )
 
-func BuildServiceInstance(instance templates.CatalogInstance, template templates.InstanceTemplate) (*svcat.ServiceInstance, error) {
+func BuildServiceInstance(instance templates.TemplatedInstance, template templates.InstanceTemplate) (*svcat.ServiceInstance, error) {
 	finalInstance, err := mergeTemplateWithInstance(instance, template)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func BuildServiceInstance(instance templates.CatalogInstance, template templates
 	}, nil
 }
 
-func BuildServiceBinding(binding templates.CatalogBinding) *svcat.ServiceBinding {
+func BuildServiceBinding(binding templates.TemplatedBinding) *svcat.ServiceBinding {
 	return &svcat.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      binding.Name,
@@ -72,7 +72,7 @@ func BuildServiceBinding(binding templates.CatalogBinding) *svcat.ServiceBinding
 	}
 }
 
-func BuildShadowSecret(secret *core.Secret, binding templates.CatalogBinding) (*core.Secret, error) {
+func BuildShadowSecret(secret *core.Secret, binding templates.TemplatedBinding) (*core.Secret, error) {
 	shadowSecret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      toShadowSecretName(secret.Name),
@@ -88,7 +88,7 @@ func BuildShadowSecret(secret *core.Secret, binding templates.CatalogBinding) (*
 	return shadowSecret, nil
 }
 
-func RefreshServiceInstance(inst *templates.CatalogInstance, svcInst *svcat.ServiceInstance) *svcat.ServiceInstance {
+func RefreshServiceInstance(inst *templates.TemplatedInstance, svcInst *svcat.ServiceInstance) *svcat.ServiceInstance {
 	svcInst = svcInst.DeepCopy()
 
 	svcInst.Spec.Parameters = inst.Spec.Parameters
@@ -106,7 +106,7 @@ func RefreshServiceInstance(inst *templates.CatalogInstance, svcInst *svcat.Serv
 	return svcInst
 }
 
-func RefreshServiceBinding(bnd *templates.CatalogBinding, svcBnd *svcat.ServiceBinding) *svcat.ServiceBinding {
+func RefreshServiceBinding(bnd *templates.TemplatedBinding, svcBnd *svcat.ServiceBinding) *svcat.ServiceBinding {
 	svcBnd = svcBnd.DeepCopy()
 
 	svcBnd.Spec.Parameters = bnd.Spec.Parameters
@@ -136,7 +136,7 @@ func toShadowSecretName(name string) string {
 	return strings.TrimRight(name, SecretSuffix)
 }
 
-func mergeTemplateWithInstance(instance templates.CatalogInstance, template templates.InstanceTemplate) (*templates.CatalogInstance, error) {
+func mergeTemplateWithInstance(instance templates.TemplatedInstance, template templates.InstanceTemplate) (*templates.TemplatedInstance, error) {
 	finalInstance := instance.DeepCopy()
 
 	if finalInstance.Spec.ClassExternalName == "" {
@@ -157,7 +157,7 @@ func mergeTemplateWithInstance(instance templates.CatalogInstance, template temp
 	return finalInstance, nil
 }
 
-func ApplyBindingTemplate(binding templates.CatalogBinding, template templates.BindingTemplate) (*templates.CatalogBinding, error) {
+func ApplyBindingTemplate(binding templates.TemplatedBinding, template templates.BindingTemplate) (*templates.TemplatedBinding, error) {
 	finalBinding := binding.DeepCopy()
 
 	// Default the secret name to the instance name, if empty

@@ -25,7 +25,7 @@ func newResolver(templatesClient templatesclient.Interface, svcatClient svcatcli
 	}
 }
 
-func (r *resolver) ResolveInstanceTemplate(instance templates.CatalogInstance) (*templates.InstanceTemplate, error) {
+func (r *resolver) ResolveInstanceTemplate(instance templates.TemplatedInstance) (*templates.InstanceTemplate, error) {
 	opts := meta.ListOptions{
 		LabelSelector: labels.FormatLabels(map[string]string{templates.FieldServiceTypeName: instance.Spec.ServiceType}),
 	}
@@ -53,8 +53,8 @@ func (r *resolver) ResolveInstanceTemplate(instance templates.CatalogInstance) (
 	return &template, nil
 }
 
-func (r *resolver) ResolveBindingTemplate(binding templates.CatalogBinding) (*templates.BindingTemplate, error) {
-	inst, err := r.templatesClient.TemplatesExperimental().CatalogInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name, meta.GetOptions{})
+func (r *resolver) ResolveBindingTemplate(binding templates.TemplatedBinding) (*templates.BindingTemplate, error) {
+	inst, err := r.templatesClient.TemplatesExperimental().TemplatedInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name, meta.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (r *resolver) ResolveBindingTemplate(binding templates.CatalogBinding) (*te
 	return &template, nil
 }
 
-func (r *resolver) ResolvePlan(instance templates.CatalogInstance) (*svcat.ClusterServiceClass, *svcat.ClusterServicePlan, error) {
+func (r *resolver) ResolvePlan(instance templates.TemplatedInstance) (*svcat.ClusterServiceClass, *svcat.ClusterServicePlan, error) {
 	// TODO: using the plan selector and type select a matching plan
 	return nil, nil, nil
 }

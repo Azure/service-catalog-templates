@@ -1,5 +1,5 @@
 apiVersion: templates.servicecatalog.k8s.io/experimental
-kind: CatalogInstance
+kind: TemplatedInstance
 metadata:
   name: testdb
   namespace: default
