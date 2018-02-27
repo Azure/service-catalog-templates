@@ -1,4 +1,4 @@
-package svcatt
+package builder
 
 import (
 	"encoding/json"
@@ -62,18 +62,18 @@ func BuildServiceBinding(binding templates.TemplatedBinding) *svcat.ServiceBindi
 			ServiceInstanceRef: binding.Spec.InstanceRef,
 			Parameters:         binding.Spec.Parameters,
 			ParametersFrom:     binding.Spec.ParametersFrom,
-			SecretName:         toSVCSecretName(binding.Spec.SecretName),
+			SecretName:         ShadowSecretName(binding.Spec.SecretName),
 		},
 	}
 }
 
-func BuildShadowSecret(secret *core.Secret, binding templates.TemplatedBinding) (*core.Secret, error) {
+func BuildBoundSecret(secret core.Secret, binding templates.TemplatedBinding) (*core.Secret, error) {
 	shadowSecret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      toShadowSecretName(secret.Name),
+			Name:      BoundSecretName(secret.Name),
 			Namespace: secret.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(secret, core.SchemeGroupVersion.WithKind("Secret")),
+				*metav1.NewControllerRef(&secret, core.SchemeGroupVersion.WithKind("Secret")),
 			},
 		},
 		Type: secret.Type,
@@ -110,7 +110,7 @@ func RefreshServiceBinding(bnd *templates.TemplatedBinding, svcBnd *svcat.Servic
 	return svcBnd
 }
 
-func RefreshSecret(svcSecret core.Secret, secret core.Secret) (*core.Secret, bool) {
+func RefreshSecret(svcSecret core.Secret, binding templates.TemplatedBinding, secret core.Secret) (*core.Secret, bool) {
 	// TODO: Sync all fields
 
 	if reflect.DeepEqual(svcSecret.Data, secret.Data) {
@@ -118,16 +118,16 @@ func RefreshSecret(svcSecret core.Secret, secret core.Secret) (*core.Secret, boo
 	}
 
 	updatedSecret := secret.DeepCopy()
-	updatedSecret.Data = svcSecret.Data
+	updatedSecret.Data = mapSecretKeys(binding.Spec.SecretKeys, svcSecret.Data)
 
 	return updatedSecret, true
 }
 
-func toSVCSecretName(name string) string {
+func ShadowSecretName(name string) string {
 	return name + SecretSuffix
 }
 
-func toShadowSecretName(name string) string {
+func BoundSecretName(name string) string {
 	return strings.TrimRight(name, SecretSuffix)
 }
 

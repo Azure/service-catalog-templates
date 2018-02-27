@@ -18,4 +18,4 @@ kubectl apply -f contrib/examples/binding.yaml
 kubectl get templatedbindings
 kubectl get tbnd
 
-watch kubectl get secret testdb-creds
+watch kubectl describe secret testdb-creds

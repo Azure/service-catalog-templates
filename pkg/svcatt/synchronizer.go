@@ -18,6 +18,7 @@ import (
 	templatesclient "github.com/Azure/service-catalog-templates/pkg/client/clientset/versioned"
 	templateinformers "github.com/Azure/service-catalog-templates/pkg/client/informers/externalversions/templates/experimental"
 	templateslisters "github.com/Azure/service-catalog-templates/pkg/client/listers/templates/experimental"
+	"github.com/Azure/service-catalog-templates/pkg/svcatt/builder"
 
 	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
@@ -159,7 +160,7 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 		template := cachedTemplate.DeepCopy()
 
 		// Apply changes from the template to the instance
-		inst, err = ApplyInstanceTemplate(*inst, *template)
+		inst, err = builder.ApplyInstanceTemplate(*inst, *template)
 		if err != nil {
 			return false, inst, err
 		}
@@ -169,7 +170,7 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 		}
 
 		// Convert the templated resource into a service catalog resource
-		svcInst, err = BuildServiceInstance(*inst)
+		svcInst, err = builder.BuildServiceInstance(*inst)
 		if err != nil {
 			return false, inst, err
 		}
@@ -197,7 +198,7 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 	// should update the Deployment resource.
 	if inst.Spec.Parameters != nil && (svcInst.Spec.Parameters == nil || string(inst.Spec.Parameters.Raw) != string(svcInst.Spec.Parameters.Raw)) {
 		glog.V(4).Infof("Syncing instance %s back to service instance %s", inst.SelfLink, svcInst.SelfLink)
-		svcInst = RefreshServiceInstance(inst, svcInst)
+		svcInst = builder.RefreshServiceInstance(inst, svcInst)
 		svcInst, err = s.svcatClient.ServicecatalogV1beta1().ServiceInstances(svcInst.Namespace).Update(svcInst)
 	}
 
@@ -291,7 +292,7 @@ func (s *Synchronizer) SynchronizeBinding(key string) (bool, runtime.Object, err
 		template := cachedTemplate.DeepCopy()
 
 		// Apply changes from the template to the instance
-		bnd, err = ApplyBindingTemplate(*bnd, *template)
+		bnd, err = builder.ApplyBindingTemplate(*bnd, *template)
 		if err != nil {
 			return false, bnd, err
 		}
@@ -301,7 +302,7 @@ func (s *Synchronizer) SynchronizeBinding(key string) (bool, runtime.Object, err
 		}
 
 		// Convert the templated resource into a service catalog resource
-		svcBnd = BuildServiceBinding(*bnd)
+		svcBnd = builder.BuildServiceBinding(*bnd)
 		svcBnd, err = s.svcatClient.ServicecatalogV1beta1().ServiceBindings(svcBnd.Namespace).Create(svcBnd)
 	}
 
@@ -325,7 +326,7 @@ func (s *Synchronizer) SynchronizeBinding(key string) (bool, runtime.Object, err
 	// TODO: sync other fields
 	if bnd.Spec.Parameters != nil && (svcBnd.Spec.Parameters == nil || string(bnd.Spec.Parameters.Raw) != string(svcBnd.Spec.Parameters.Raw)) {
 		glog.V(4).Infof("Syncing shadow binding %s back to service catalog binding %s", bnd.SelfLink, svcBnd.SelfLink)
-		svcBnd = RefreshServiceBinding(bnd, svcBnd)
+		svcBnd = builder.RefreshServiceBinding(bnd, svcBnd)
 		svcBnd, err = s.svcatClient.ServicecatalogV1beta1().ServiceBindings(svcBnd.Namespace).Update(svcBnd)
 	}
 
@@ -405,7 +406,7 @@ func (s *Synchronizer) SynchronizeSecret(key string) (bool, runtime.Object, erro
 	//
 
 	// Get the corresponding shadow resource
-	shadowSecretName := toShadowSecretName(svcSecret.Name)
+	shadowSecretName := builder.BoundSecretName(svcSecret.Name)
 	secret, err := s.secretLister.Secrets(svcSecret.Namespace).Get(shadowSecretName)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
@@ -429,7 +430,7 @@ func (s *Synchronizer) SynchronizeSecret(key string) (bool, runtime.Object, erro
 			return false, svcSecret, err
 		}
 
-		secret, err = BuildShadowSecret(svcSecret, *bnd)
+		secret, err = builder.BuildBoundSecret(*svcSecret, *bnd)
 		if err != nil {
 			return false, svcSecret, err
 		}
@@ -452,7 +453,29 @@ func (s *Synchronizer) SynchronizeSecret(key string) (bool, runtime.Object, erro
 	//
 	// Sync updates to service catalog resource back to the shadow resource
 	//
-	if refreshedSecret, changed := RefreshSecret(*svcSecret, *secret); changed {
+
+	// TODO: move into templates sdk
+	ownerSvcBnd := metav1.GetControllerOf(svcSecret)
+	if ownerSvcBnd == nil {
+		// Ignore unmanaged secrets
+		return false, nil, nil
+	}
+	svcBnd, err := s.svcatBindingLister.ServiceBindings(svcSecret.Namespace).Get(ownerSvcBnd.Name)
+	if err != nil {
+		return false, svcSecret, err
+	}
+
+	ownerBnd := metav1.GetControllerOf(svcBnd)
+	if ownerSvcBnd == nil {
+		// Ignore unmanaged resources
+		return false, nil, nil
+	}
+	bnd, err := s.bindingLister.TemplatedBindings(svcBnd.Namespace).Get(ownerBnd.Name)
+	if err != nil {
+		return false, svcSecret, err
+	}
+
+	if refreshedSecret, changed := builder.RefreshSecret(*svcSecret, *bnd, *secret); changed {
 		secret, err = s.coreClient.CoreV1().Secrets(refreshedSecret.Namespace).Update(refreshedSecret)
 
 		// If an error occurs during Update, we'll requeue the item so we can
