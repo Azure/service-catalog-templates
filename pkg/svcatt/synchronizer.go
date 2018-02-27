@@ -158,7 +158,18 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 		// TODO: Figure out the best practices for proactive DeepCopies and avoiding pointers so I don't mess up the cache
 		template := cachedTemplate.DeepCopy()
 
-		svcInst, err = BuildServiceInstance(*inst, *template)
+		// Apply changes from the template to the instance
+		inst, err = ApplyInstanceTemplate(*inst, *template)
+		if err != nil {
+			return false, inst, err
+		}
+		inst, err = s.templatesClient.TemplatesExperimental().TemplatedInstances(inst.Namespace).Update(inst)
+		if err != nil {
+			return false, inst, err
+		}
+
+		// Convert the templated resource into a service catalog resource
+		svcInst, err = BuildServiceInstance(*inst)
 		if err != nil {
 			return false, inst, err
 		}
@@ -279,17 +290,17 @@ func (s *Synchronizer) SynchronizeBinding(key string) (bool, runtime.Object, err
 		}
 		template := cachedTemplate.DeepCopy()
 
+		// Apply changes from the template to the instance
 		bnd, err = ApplyBindingTemplate(*bnd, *template)
 		if err != nil {
 			return false, bnd, err
 		}
-
 		bnd, err = s.templatesClient.TemplatesExperimental().TemplatedBindings(bnd.Namespace).Update(bnd)
 		if err != nil {
 			return false, bnd, err
 		}
 
-		glog.Infof("%#v", bnd)
+		// Convert the templated resource into a service catalog resource
 		svcBnd = BuildServiceBinding(*bnd)
 		svcBnd, err = s.svcatClient.ServicecatalogV1beta1().ServiceBindings(svcBnd.Namespace).Create(svcBnd)
 	}

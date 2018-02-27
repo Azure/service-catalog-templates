@@ -22,34 +22,29 @@ const (
 	SecretSuffix = "-template"
 )
 
-func BuildServiceInstance(instance templates.TemplatedInstance, template templates.InstanceTemplate) (*svcat.ServiceInstance, error) {
-	finalInstance, err := mergeTemplateWithInstance(instance, template)
-	if err != nil {
-		return nil, err
-	}
-
+func BuildServiceInstance(instance templates.TemplatedInstance) (*svcat.ServiceInstance, error) {
 	// Verify we resolved a plan
-	if finalInstance.Spec.ClassExternalName == "" || finalInstance.Spec.PlanExternalName == "" {
+	if instance.Spec.ClassExternalName == "" || instance.Spec.PlanExternalName == "" {
 		return nil, errors.New("could not resolve a class and plan")
 	}
 
 	return &svcat.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      finalInstance.Name,
-			Namespace: finalInstance.Namespace,
+			Name:      instance.Name,
+			Namespace: instance.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(finalInstance, templates.SchemeGroupVersion.WithKind(templates.InstanceKind)),
+				*metav1.NewControllerRef(&instance, templates.SchemeGroupVersion.WithKind(templates.InstanceKind)),
 			},
 		},
 		Spec: svcat.ServiceInstanceSpec{
 			PlanReference: svcat.PlanReference{
-				ClusterServiceClassExternalName: finalInstance.Spec.ClassExternalName,
-				ClusterServicePlanExternalName:  finalInstance.Spec.PlanExternalName,
+				ClusterServiceClassExternalName: instance.Spec.ClassExternalName,
+				ClusterServicePlanExternalName:  instance.Spec.PlanExternalName,
 			},
-			Parameters:     finalInstance.Spec.Parameters,
-			ParametersFrom: finalInstance.Spec.ParametersFrom,
-			ExternalID:     finalInstance.Spec.ExternalID,
-			UpdateRequests: finalInstance.Spec.UpdateRequests,
+			Parameters:     instance.Spec.Parameters,
+			ParametersFrom: instance.Spec.ParametersFrom,
+			ExternalID:     instance.Spec.ExternalID,
+			UpdateRequests: instance.Spec.UpdateRequests,
 		},
 	}, nil
 }
@@ -136,7 +131,7 @@ func toShadowSecretName(name string) string {
 	return strings.TrimRight(name, SecretSuffix)
 }
 
-func mergeTemplateWithInstance(instance templates.TemplatedInstance, template templates.InstanceTemplate) (*templates.TemplatedInstance, error) {
+func ApplyInstanceTemplate(instance templates.TemplatedInstance, template templates.InstanceTemplate) (*templates.TemplatedInstance, error) {
 	finalInstance := instance.DeepCopy()
 
 	if finalInstance.Spec.ClassExternalName == "" {
