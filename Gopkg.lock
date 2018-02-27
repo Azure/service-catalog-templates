@@ -152,6 +152,18 @@
   revision = "2bcd89a1743fd4b373f7370ce8ddc14dfbd18229"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/errwrap"
+  packages = ["."]
+  revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-multierror"
+  packages = ["."]
+  revision = "b7773ae218740a7be65057fc60b366a49b538a44"
+
+[[projects]]
   name = "github.com/hashicorp/golang-lru"
   packages = [
     ".",
@@ -182,6 +194,7 @@
   version = "1.0.1"
 
 [[projects]]
+  branch = "master"
   name = "github.com/kubernetes-incubator/service-catalog"
   packages = [
     "pkg/apis/servicecatalog",
@@ -199,10 +212,10 @@
     "pkg/client/informers_generated/externalversions/settings",
     "pkg/client/informers_generated/externalversions/settings/v1alpha1",
     "pkg/client/listers_generated/servicecatalog/v1beta1",
-    "pkg/client/listers_generated/settings/v1alpha1"
+    "pkg/client/listers_generated/settings/v1alpha1",
+    "pkg/svcat/service-catalog"
   ]
-  revision = "706e5555e8ace65179cd3ee77458971267d20187"
-  version = "v0.1.7"
+  revision = "ca83d186a762b944ed6b33b7493027e241b8d9fa"
 
 [[projects]]
   branch = "master"
@@ -272,6 +285,12 @@
     "jwt"
   ]
   revision = "543e37812f10c46c622c9575afd7ad22f22a12ba"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  revision = "fd80eb99c8f653c847d294a001bdf2a3a6f768f5"
 
 [[projects]]
   name = "golang.org/x/sys"
@@ -367,7 +386,6 @@
     "storage/v1beta1"
   ]
   revision = "006a217681ae70cbacdd66a5e2fca1a61a8ff28e"
-  version = "kubernetes-1.9.2"
 
 [[projects]]
   name = "k8s.io/apimachinery"
@@ -545,7 +563,6 @@
     "util/workqueue"
   ]
   revision = "9389c055a838d4f208b699b3c7c51b70f2368861"
-  version = "kubernetes-1.9.2"
 
 [[projects]]
   branch = "release-1.9"
@@ -585,6 +602,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "85aa1555f51140fc3ad912880d4a7a54727d1d8c2c9603e3921c3cf8e4dc08df"
+  inputs-digest = "17c7c863d719c0fa50fbcd4be93e1abbfafbf9b538f22427e5f06c4946359d6f"
   solver-name = "gps-cdcl"
   solver-version = 1

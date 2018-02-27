@@ -20,7 +20,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kubernetes-incubator/service-catalog"
-  version = "~0.1.7"
+  branch = "master"
 
 [prune]
   non-go = true
