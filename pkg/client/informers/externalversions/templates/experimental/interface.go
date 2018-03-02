@@ -10,6 +10,14 @@ import (
 type Interface interface {
 	// BindingTemplates returns a BindingTemplateInformer.
 	BindingTemplates() BindingTemplateInformer
+	// BrokerBindingTemplates returns a BrokerBindingTemplateInformer.
+	BrokerBindingTemplates() BrokerBindingTemplateInformer
+	// BrokerInstanceTemplates returns a BrokerInstanceTemplateInformer.
+	BrokerInstanceTemplates() BrokerInstanceTemplateInformer
+	// ClusterBindingTemplates returns a ClusterBindingTemplateInformer.
+	ClusterBindingTemplates() ClusterBindingTemplateInformer
+	// ClusterInstanceTemplates returns a ClusterInstanceTemplateInformer.
+	ClusterInstanceTemplates() ClusterInstanceTemplateInformer
 	// InstanceTemplates returns a InstanceTemplateInformer.
 	InstanceTemplates() InstanceTemplateInformer
 	// TemplatedBindings returns a TemplatedBindingInformer.
@@ -32,6 +40,26 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // BindingTemplates returns a BindingTemplateInformer.
 func (v *version) BindingTemplates() BindingTemplateInformer {
 	return &bindingTemplateInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// BrokerBindingTemplates returns a BrokerBindingTemplateInformer.
+func (v *version) BrokerBindingTemplates() BrokerBindingTemplateInformer {
+	return &brokerBindingTemplateInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// BrokerInstanceTemplates returns a BrokerInstanceTemplateInformer.
+func (v *version) BrokerInstanceTemplates() BrokerInstanceTemplateInformer {
+	return &brokerInstanceTemplateInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ClusterBindingTemplates returns a ClusterBindingTemplateInformer.
+func (v *version) ClusterBindingTemplates() ClusterBindingTemplateInformer {
+	return &clusterBindingTemplateInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ClusterInstanceTemplates returns a ClusterInstanceTemplateInformer.
+func (v *version) ClusterInstanceTemplates() ClusterInstanceTemplateInformer {
+	return &clusterInstanceTemplateInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // InstanceTemplates returns a InstanceTemplateInformer.

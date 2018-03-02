@@ -14,6 +14,22 @@ func (c *FakeTemplatesExperimental) BindingTemplates(namespace string) experimen
 	return &FakeBindingTemplates{c, namespace}
 }
 
+func (c *FakeTemplatesExperimental) BrokerBindingTemplates() experimental.BrokerBindingTemplateInterface {
+	return &FakeBrokerBindingTemplates{c}
+}
+
+func (c *FakeTemplatesExperimental) BrokerInstanceTemplates() experimental.BrokerInstanceTemplateInterface {
+	return &FakeBrokerInstanceTemplates{c}
+}
+
+func (c *FakeTemplatesExperimental) ClusterBindingTemplates() experimental.ClusterBindingTemplateInterface {
+	return &FakeClusterBindingTemplates{c}
+}
+
+func (c *FakeTemplatesExperimental) ClusterInstanceTemplates() experimental.ClusterInstanceTemplateInterface {
+	return &FakeClusterInstanceTemplates{c}
+}
+
 func (c *FakeTemplatesExperimental) InstanceTemplates(namespace string) experimental.InstanceTemplateInterface {
 	return &FakeInstanceTemplates{c, namespace}
 }

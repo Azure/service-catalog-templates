@@ -10,6 +10,10 @@ import (
 type TemplatesExperimentalInterface interface {
 	RESTClient() rest.Interface
 	BindingTemplatesGetter
+	BrokerBindingTemplatesGetter
+	BrokerInstanceTemplatesGetter
+	ClusterBindingTemplatesGetter
+	ClusterInstanceTemplatesGetter
 	InstanceTemplatesGetter
 	TemplatedBindingsGetter
 	TemplatedInstancesGetter
@@ -22,6 +26,22 @@ type TemplatesExperimentalClient struct {
 
 func (c *TemplatesExperimentalClient) BindingTemplates(namespace string) BindingTemplateInterface {
 	return newBindingTemplates(c, namespace)
+}
+
+func (c *TemplatesExperimentalClient) BrokerBindingTemplates() BrokerBindingTemplateInterface {
+	return newBrokerBindingTemplates(c)
+}
+
+func (c *TemplatesExperimentalClient) BrokerInstanceTemplates() BrokerInstanceTemplateInterface {
+	return newBrokerInstanceTemplates(c)
+}
+
+func (c *TemplatesExperimentalClient) ClusterBindingTemplates() ClusterBindingTemplateInterface {
+	return newClusterBindingTemplates(c)
+}
+
+func (c *TemplatesExperimentalClient) ClusterInstanceTemplates() ClusterInstanceTemplateInterface {
+	return newClusterInstanceTemplates(c)
 }
 
 func (c *TemplatesExperimentalClient) InstanceTemplates(namespace string) InstanceTemplateInterface {

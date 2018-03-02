@@ -10,6 +10,22 @@ type BindingTemplateListerExpansion interface{}
 // BindingTemplateNamespaceLister.
 type BindingTemplateNamespaceListerExpansion interface{}
 
+// BrokerBindingTemplateListerExpansion allows custom methods to be added to
+// BrokerBindingTemplateLister.
+type BrokerBindingTemplateListerExpansion interface{}
+
+// BrokerInstanceTemplateListerExpansion allows custom methods to be added to
+// BrokerInstanceTemplateLister.
+type BrokerInstanceTemplateListerExpansion interface{}
+
+// ClusterBindingTemplateListerExpansion allows custom methods to be added to
+// ClusterBindingTemplateLister.
+type ClusterBindingTemplateListerExpansion interface{}
+
+// ClusterInstanceTemplateListerExpansion allows custom methods to be added to
+// ClusterInstanceTemplateLister.
+type ClusterInstanceTemplateListerExpansion interface{}
+
 // InstanceTemplateListerExpansion allows custom methods to be added to
 // InstanceTemplateLister.
 type InstanceTemplateListerExpansion interface{}
