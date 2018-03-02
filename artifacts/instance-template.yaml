@@ -19,14 +19,16 @@ spec:
         spec:
           required:
           - serviceType
-          - classExternalName
-          - planExternalName
           properties:
             serviceType:
               type: string
-            classExternalName:
+            clusterServiceClassExternalName:
               type: string
-            planExternalName:
+            clusterServiceClassName:
+             type: string
+            clusterServicePlanExternalName:
+              type: string
+            clusterServicePlanName:
               type: string
             parameters:
               type: object

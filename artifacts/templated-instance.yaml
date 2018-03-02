@@ -24,9 +24,13 @@ spec:
               type: string
             planSelector:
               type: object
-            classExternalName:
+            clusterServiceClassExternalName:
               type: string
-            planExternalName:
+            clusterServiceClassName:
+             type: string
+            clusterServicePlanExternalName:
+              type: string
+            clusterServicePlanName:
               type: string
             parameters:
               type: object

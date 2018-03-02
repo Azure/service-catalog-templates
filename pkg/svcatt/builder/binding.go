@@ -9,55 +9,51 @@ import (
 	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
-func BuildServiceBinding(binding templates.TemplatedBinding) *svcat.ServiceBinding {
+func BuildServiceBinding(tbnd *templates.TemplatedBinding) *svcat.ServiceBinding {
 	return &svcat.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      binding.Name,
-			Namespace: binding.Namespace,
+			Name:      tbnd.Name,
+			Namespace: tbnd.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(&binding, templates.SchemeGroupVersion.WithKind(templates.BindingKind)),
+				*metav1.NewControllerRef(tbnd, templates.SchemeGroupVersion.WithKind(templates.BindingKind)),
 			},
 		},
 		Spec: svcat.ServiceBindingSpec{
-			ServiceInstanceRef: binding.Spec.InstanceRef,
-			Parameters:         binding.Spec.Parameters,
-			ParametersFrom:     binding.Spec.ParametersFrom,
-			SecretName:         ShadowSecretName(binding.Spec.SecretName),
+			ServiceInstanceRef: tbnd.Spec.InstanceRef,
+			Parameters:         tbnd.Spec.Parameters,
+			ParametersFrom:     tbnd.Spec.ParametersFrom,
+			SecretName:         ShadowSecretName(tbnd.Spec.SecretName),
 		},
 	}
 }
 
-func RefreshServiceBinding(bnd *templates.TemplatedBinding, svcBnd *svcat.ServiceBinding) *svcat.ServiceBinding {
-	svcBnd = svcBnd.DeepCopy()
-
-	svcBnd.Spec.Parameters = bnd.Spec.Parameters
-	svcBnd.Spec.ParametersFrom = bnd.Spec.ParametersFrom
+func RefreshServiceBinding(tbnd *templates.TemplatedBinding, svcBnd *svcat.ServiceBinding) *svcat.ServiceBinding {
+	svcBnd.Spec.Parameters = tbnd.Spec.Parameters
+	svcBnd.Spec.ParametersFrom = tbnd.Spec.ParametersFrom
 
 	return svcBnd
 }
 
-func ApplyBindingTemplate(binding templates.TemplatedBinding, template templates.BindingTemplate) (*templates.TemplatedBinding, error) {
-	finalBinding := binding.DeepCopy()
-
+func ApplyBindingTemplate(tbnd *templates.TemplatedBinding, template templates.BindingTemplateInterface) (*templates.TemplatedBinding, error) {
 	// Default the secret name to the instance name, if empty
-	if finalBinding.Spec.SecretName == "" {
-		finalBinding.Spec.SecretName = finalBinding.Spec.InstanceRef.Name
+	if tbnd.Spec.SecretName == "" {
+		tbnd.Spec.SecretName = tbnd.Spec.InstanceRef.Name
 	}
 
 	var err error
-	finalBinding.Spec.Parameters, err = mergeParameters(finalBinding.Spec.Parameters, template.Spec.Parameters)
+	tbnd.Spec.Parameters, err = MergeParameters(tbnd.Spec.Parameters, template.GetParameters())
 	if err != nil {
 		return nil, err
 	}
 
-	finalBinding.Spec.ParametersFrom = selectParametersFromSource(finalBinding.Spec.ParametersFrom, template.Spec.ParametersFrom)
+	tbnd.Spec.ParametersFrom = MergeParametersFromSource(tbnd.Spec.ParametersFrom, template.GetParametersFrom())
 
-	finalBinding.Spec.SecretKeys = mergeSecretKeys(finalBinding.Spec.SecretKeys, template.Spec.SecretKeys)
+	tbnd.Spec.SecretKeys = MergeSecretKeys(tbnd.Spec.SecretKeys, template.GetSecretKeys())
 
-	return finalBinding, nil
+	return tbnd, nil
 }
 
-func mergeSecretKeys(bndKeys map[string]string, tmplKeys map[string]string) map[string]string {
+func MergeSecretKeys(bndKeys map[string]string, tmplKeys map[string]string) map[string]string {
 	// TODO: Add tests and remove these ifs
 	if tmplKeys == nil {
 		return bndKeys

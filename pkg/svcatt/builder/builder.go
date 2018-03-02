@@ -10,7 +10,7 @@ import (
 	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
-func mergeParameters(instParams *runtime.RawExtension, tmplParams *runtime.RawExtension) (*runtime.RawExtension, error) {
+func MergeParameters(instParams *runtime.RawExtension, tmplParams *runtime.RawExtension) (*runtime.RawExtension, error) {
 	if tmplParams == nil {
 		return instParams, nil
 	}
@@ -33,7 +33,7 @@ func mergeParameters(instParams *runtime.RawExtension, tmplParams *runtime.RawEx
 	return &runtime.RawExtension{Raw: result}, nil
 }
 
-func selectParametersFromSource(instParams []svcat.ParametersFromSource, tmplParams []svcat.ParametersFromSource) []svcat.ParametersFromSource {
+func MergeParametersFromSource(instParams []svcat.ParametersFromSource, tmplParams []svcat.ParametersFromSource) []svcat.ParametersFromSource {
 	// TODO: I don't believe that merging is the right thing, so I'm only using the template if the instance didn't define anything
 	if len(instParams) == 0 {
 		return tmplParams

@@ -10,9 +10,9 @@ import (
 	svcat "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
-func BuildServiceInstance(instance templates.TemplatedInstance) (*svcat.ServiceInstance, error) {
+func BuildServiceInstance(instance *templates.TemplatedInstance) (*svcat.ServiceInstance, error) {
 	// Verify we resolved a plan
-	if instance.Spec.ClassExternalName == "" || instance.Spec.PlanExternalName == "" {
+	if !isPlanReferenceSpecified(instance.Spec.PlanReference) {
 		return nil, errors.New("could not resolve a class and plan")
 	}
 
@@ -21,14 +21,11 @@ func BuildServiceInstance(instance templates.TemplatedInstance) (*svcat.ServiceI
 			Name:      instance.Name,
 			Namespace: instance.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(&instance, templates.SchemeGroupVersion.WithKind(templates.InstanceKind)),
+				*metav1.NewControllerRef(instance, templates.SchemeGroupVersion.WithKind(templates.InstanceKind)),
 			},
 		},
 		Spec: svcat.ServiceInstanceSpec{
-			PlanReference: svcat.PlanReference{
-				ClusterServiceClassExternalName: instance.Spec.ClassExternalName,
-				ClusterServicePlanExternalName:  instance.Spec.PlanExternalName,
-			},
+			PlanReference:  instance.Spec.PlanReference,
 			Parameters:     instance.Spec.Parameters,
 			ParametersFrom: instance.Spec.ParametersFrom,
 			ExternalID:     instance.Spec.ExternalID,
@@ -38,40 +35,68 @@ func BuildServiceInstance(instance templates.TemplatedInstance) (*svcat.ServiceI
 }
 
 func RefreshServiceInstance(inst *templates.TemplatedInstance, svcInst *svcat.ServiceInstance) *svcat.ServiceInstance {
-	svcInst = svcInst.DeepCopy()
+	// TODO: Figure out what can be synced, what's immutable
 
+	svcInst.Spec.PlanReference = inst.Spec.PlanReference
 	svcInst.Spec.Parameters = inst.Spec.Parameters
 	svcInst.Spec.ParametersFrom = inst.Spec.ParametersFrom
 	svcInst.Spec.UpdateRequests = inst.Spec.UpdateRequests
 
-	// TODO: Figure out what can be synced, what's immutable
-
-	// TODO: Figure out how to sync resolved values, like plan
-	if inst.Spec.ClassExternalName != "" && inst.Spec.PlanExternalName != "" {
-		svcInst.Spec.ClusterServiceClassExternalName = inst.Spec.ClassExternalName
-		svcInst.Spec.ClusterServicePlanExternalName = inst.Spec.PlanExternalName
-	}
-
 	return svcInst
 }
 
-func ApplyInstanceTemplate(instance templates.TemplatedInstance, template templates.InstanceTemplate) (*templates.TemplatedInstance, error) {
-	finalInstance := instance.DeepCopy()
-
-	if finalInstance.Spec.ClassExternalName == "" {
-		finalInstance.Spec.ClassExternalName = template.Spec.ClassExternalName
-	}
-	if finalInstance.Spec.PlanExternalName == "" {
-		finalInstance.Spec.PlanExternalName = template.Spec.PlanExternalName
+func ApplyInstanceTemplate(instance *templates.TemplatedInstance, template templates.InstanceTemplateInterface) (*templates.TemplatedInstance, error) {
+	if !isPlanReferenceSpecified(instance.Spec.PlanReference) {
+		instance.Spec.PlanReference = template.GetPlanReference()
 	}
 
 	var err error
-	finalInstance.Spec.Parameters, err = mergeParameters(finalInstance.Spec.Parameters, template.Spec.Parameters)
+	instance.Spec.Parameters, err = MergeParameters(instance.Spec.Parameters, template.GetParameters())
 	if err != nil {
 		return nil, err
 	}
 
-	finalInstance.Spec.ParametersFrom = selectParametersFromSource(finalInstance.Spec.ParametersFrom, template.Spec.ParametersFrom)
+	instance.Spec.ParametersFrom = MergeParametersFromSource(instance.Spec.ParametersFrom, template.GetParametersFrom())
 
-	return finalInstance, nil
+	return instance, nil
+}
+
+func MergePlanReference(pr svcat.PlanReference, template svcat.PlanReference) svcat.PlanReference {
+	if !isPlanReferenceSpecified(template) {
+		return pr
+	}
+
+	if !isPlanReferenceSpecified(pr) {
+		return template
+	}
+
+	if template.ClusterServiceClassExternalName != "" {
+		pr.ClusterServiceClassExternalName = template.ClusterServiceClassExternalName
+	}
+	if template.ClusterServiceClassName != "" {
+		pr.ClusterServiceClassName = template.ClusterServiceClassName
+	}
+
+	if template.ClusterServicePlanExternalName != "" {
+		pr.ClusterServicePlanExternalName = template.ClusterServicePlanExternalName
+	}
+	if template.ClusterServicePlanName != "" {
+		pr.ClusterServicePlanName = template.ClusterServicePlanName
+	}
+
+	return pr
+}
+
+func isPlanReferenceSpecified(pr svcat.PlanReference) bool {
+	return isClassSpecified(pr) && isPlanSpecified(pr)
+}
+
+func isClassSpecified(pr svcat.PlanReference) bool {
+	return pr.ClusterServiceClassExternalName != "" ||
+		pr.ClusterServiceClassName != ""
+}
+
+func isPlanSpecified(pr svcat.PlanReference) bool {
+	return pr.ClusterServicePlanExternalName != "" ||
+		pr.ClusterServicePlanName != ""
 }

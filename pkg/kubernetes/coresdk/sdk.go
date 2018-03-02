@@ -3,6 +3,7 @@ package coresdk
 import (
 	"fmt"
 
+	"github.com/golang/glog"
 	corefactory "k8s.io/client-go/informers"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	coreclient "k8s.io/client-go/kubernetes"
@@ -29,11 +30,12 @@ func New(client coreclient.Interface, factory corefactory.SharedInformerFactory)
 
 func (sdk *SDK) Init(stopCh <-chan struct{}) error {
 	go sdk.Factory.Start(stopCh)
+	secretsInformer := sdk.Cache().Secrets().Informer()
 	if ok := cache.WaitForCacheSync(stopCh,
-		// TODO: These should probably be saved and reused
-		sdk.Cache().Secrets().Informer().HasSynced); !ok {
-		return fmt.Errorf("failed to wait for core informer caches to sync")
+		secretsInformer.HasSynced); !ok {
+		return fmt.Errorf("failed to wait for core caches to sync")
 	}
+	glog.Info("Finished synchronizing core caches")
 	return nil
 }
 

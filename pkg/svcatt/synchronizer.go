@@ -131,7 +131,7 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 		}
 
 		// Apply changes from the template to the instance
-		tinst, err = builder.ApplyInstanceTemplate(*tinst, *template)
+		tinst, err = builder.ApplyInstanceTemplate(tinst, template)
 		if err != nil {
 			return false, tinst, err
 		}
@@ -141,7 +141,7 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 		}
 
 		// Convert the templated resource into a service catalog resource
-		svcInst, err = builder.BuildServiceInstance(*tinst)
+		svcInst, err = builder.BuildServiceInstance(tinst)
 		if err != nil {
 			return false, tinst, err
 		}
@@ -253,7 +253,7 @@ func (s *Synchronizer) SynchronizeBinding(key string) (bool, runtime.Object, err
 		}
 
 		// Apply changes from the template to the instance
-		tbnd, err = builder.ApplyBindingTemplate(*tbnd, *template)
+		tbnd, err = builder.ApplyBindingTemplate(tbnd, template)
 		if err != nil {
 			return false, tbnd, err
 		}
@@ -263,7 +263,7 @@ func (s *Synchronizer) SynchronizeBinding(key string) (bool, runtime.Object, err
 		}
 
 		// Convert the templated resource into a service catalog resource
-		svcBnd = builder.BuildServiceBinding(*tbnd)
+		svcBnd = builder.BuildServiceBinding(tbnd)
 		svcBnd, err = s.svcatSDK.ServiceCatalog().ServiceBindings(svcBnd.Namespace).Create(svcBnd)
 	}
 
@@ -371,7 +371,7 @@ func (s *Synchronizer) SynchronizeSecret(key string) (bool, runtime.Object, erro
 			return false, nil, nil
 		}
 
-		secret, err = builder.BuildBoundSecret(*svcSecret, *tbnd)
+		secret, err = builder.BuildBoundSecret(svcSecret, tbnd)
 		if err != nil {
 			return false, svcSecret, err
 		}
@@ -403,7 +403,7 @@ func (s *Synchronizer) SynchronizeSecret(key string) (bool, runtime.Object, erro
 		return false, nil, nil
 	}
 
-	if refreshedSecret, changed := builder.RefreshSecret(*svcSecret, *tbnd, *secret); changed {
+	if refreshedSecret, changed := builder.RefreshSecret(svcSecret, tbnd, secret); changed {
 		secret, err = s.coreSDK.Core().Secrets(refreshedSecret.Namespace).Update(refreshedSecret)
 
 		// If an error occurs during Update, we'll requeue the item so we can

@@ -1,0 +1,17 @@
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: BrokerInstanceTemplate
+metadata:
+  name: default-mysqldb
+  namespace: default
+  labels:
+    serviceType: mysqldb # TODO: apply this automatically when the template is created
+spec:
+  serviceType: mysqldb
+  clusterServiceClassExternalName: azure-mysqldb
+  clusterServicePlanExternalName: basic50
+  parameters:
+    location: centralus
+    resourceGroup: default
+    sslEnforcement: disabled
+    firewallStartIPAddress: "0.0.0.0"
+    firewallEndIPAddress: "255.255.255.255"

@@ -53,6 +53,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&BindingTemplateList{},
 		&InstanceTemplate{},
 		&InstanceTemplateList{},
+		&ClusterInstanceTemplate{},
+		&ClusterInstanceTemplateList{},
+		&BrokerInstanceTemplate{},
+		&BrokerInstanceTemplateList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

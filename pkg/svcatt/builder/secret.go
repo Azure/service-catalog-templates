@@ -15,33 +15,32 @@ const (
 	SecretSuffix = "-template"
 )
 
-func BuildBoundSecret(secret core.Secret, binding templates.TemplatedBinding) (*core.Secret, error) {
+func BuildBoundSecret(secret *core.Secret, tbnd *templates.TemplatedBinding) (*core.Secret, error) {
 	shadowSecret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BoundSecretName(secret.Name),
 			Namespace: secret.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(&secret, core.SchemeGroupVersion.WithKind("Secret")),
+				*metav1.NewControllerRef(secret, core.SchemeGroupVersion.WithKind("Secret")),
 			},
 		},
 		Type: secret.Type,
-		Data: mapSecretKeys(binding.Spec.SecretKeys, secret.Data),
+		Data: mapSecretKeys(tbnd.Spec.SecretKeys, secret.Data),
 	}
 
 	return shadowSecret, nil
 }
 
-func RefreshSecret(svcSecret core.Secret, binding templates.TemplatedBinding, secret core.Secret) (*core.Secret, bool) {
+func RefreshSecret(svcSecret *core.Secret, tbnd *templates.TemplatedBinding, secret *core.Secret) (*core.Secret, bool) {
 	// TODO: Sync all fields
 
 	if reflect.DeepEqual(svcSecret.Data, secret.Data) {
 		return nil, false
 	}
 
-	updatedSecret := secret.DeepCopy()
-	updatedSecret.Data = mapSecretKeys(binding.Spec.SecretKeys, svcSecret.Data)
+	secret.Data = mapSecretKeys(tbnd.Spec.SecretKeys, svcSecret.Data)
 
-	return updatedSecret, true
+	return secret, true
 }
 
 func ShadowSecretName(name string) string {

@@ -3,6 +3,7 @@ package svcatsdk
 import (
 	"fmt"
 
+	"github.com/golang/glog"
 	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	svcatfactory "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	svcatinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
@@ -29,12 +30,14 @@ func New(client svcatclient.Interface, factory svcatfactory.SharedInformerFactor
 
 func (sdk *SDK) Init(stopCh <-chan struct{}) error {
 	go sdk.Factory.Start(stopCh)
+	inst := sdk.Cache().ServiceInstances().Informer()
+	bnd := sdk.Cache().ServiceBindings().Informer()
 	if ok := cache.WaitForCacheSync(stopCh,
-		// TODO: These should probably be saved and reused
-		sdk.Cache().ServiceInstances().Informer().HasSynced,
-		sdk.Cache().ServiceBindings().Informer().HasSynced); !ok {
-		return fmt.Errorf("failed to wait for service catalog informer caches to sync")
+		inst.HasSynced,
+		bnd.HasSynced); !ok {
+		return fmt.Errorf("failed to wait for svcat caches to sync")
 	}
+	glog.Info("Finished synchronizing svcat caches")
 	return nil
 }
 
