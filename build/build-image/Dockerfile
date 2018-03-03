@@ -4,6 +4,10 @@ ENV USE_DOCKER=false
 
 WORKDIR /tmp
 
+# Install tree
+RUN apt-get update
+RUN apt-get install -y tree
+
 # Install Helm
 RUN curl -sLO https://kubernetes-helm.storage.googleapis.com/helm-v2.8.0-linux-amd64.tar.gz && \
     tar -zxvf helm-v2.8.0-linux-amd64.tar.gz && \

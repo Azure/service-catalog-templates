@@ -1,2 +1,5 @@
 /bin
 /vendor/github.com/petar/GoLLRB/doc
+/build/service-catalog-templates/service-catalog-templates
+.gocache
+/service-catalog-templates

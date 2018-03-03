@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/Azure/service-catalog-templates/pkg/kubernetes/coresdk"
@@ -28,7 +30,7 @@ var (
 )
 
 func main() {
-	flag.Parse()
+	configure()
 
 	// set up signals so we handle the first shutdown signal gracefully
 	stopCh := signals.SetupSignalHandler()
@@ -82,4 +84,24 @@ func main() {
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+}
+
+func configure() {
+	flag.Parse()
+
+	if kubeconfig == "" {
+		kubeconfig = os.Getenv("KUBECONFIG")
+		if kubeconfig == "" {
+			localConfig := fmt.Sprintf("%s/.kube/config", os.Getenv("HOME"))
+			if _, err := os.Stat(localConfig); err == nil {
+				kubeconfig = localConfig
+			}
+		}
+	}
+
+	if kubeconfig == "" {
+		glog.Infof("Using kubeconfig: %s", kubeconfig)
+	} else {
+		glog.Info("Using in-cluster kubeconfig")
+	}
 }

@@ -1,32 +1,45 @@
 PKG = github.com/Azure/service-catalog-templates
-DOCKER_IMG = svcatt-build
+BUILD_IMG = svcatt-build
+RUNTIME_IMG ?= carolynvs/service-catalog-templates
 
-USE_DOCKER ?= false
+PKG_PATH = /go/src/$(PKG)
+GOCACHE = $(PKG_PATH)/.gocache
+BINDIR ?= build/service-catalog-templates
 
-ifeq ($(USE_DOCKER),true)
-  DO = docker run --rm -it -v $$HOME/.kube:/root/.kube -v $$HOME/.minikube:$$HOME/.minikube -v $$(pwd):/go/src/$(PKG) -v $$HOME/go/pkg:/go/pkg $(DOCKER_IMG)
-else
-  DO =
-endif
+DO = docker run --rm -it -e GOCACHE=$(GOCACHE) -e BINDIR=$(BINDIR) -v $$HOME/.kube:/root/.kube -v $$HOME/.minikube:$$HOME/.minikube -v $$(pwd):$(PKG_PATH) $(BUILD_IMG)
 
-default: build
-
-.PHONY: build-image codegen build create-cluster test
+default: build-image build
 
 build-image:
-	docker build -t $(DOCKER_IMG) ./build/build-image
+	docker build -t $(BUILD_IMG) ./build/build-image
 
-codegen: build-image
+TYPES_FILES = $(shell find pkg/apis -name types.go)
+codegen: pkg/client
+pkg/client: $(TYPES_FILES)
 	$(DO) ./build/update-codegen.sh
 
-build: codegen
+build/service-catalog-templates/service-catalog-templates: build
+build: pkg/client
+	echo $(BINDIR)
 	$(DO) ./build/build.sh
 
-run: build
+runtime-image: build/service-catalog-templates/service-catalog-templates
+	docker build -t $(RUNTIME_IMG) ./build/service-catalog-templates
+
+push:
+	docker push $(RUNTIME_IMG)
+
+run:
 	$(DO) ./hack/run.sh
+
+deploy:
+	-helm delete --purge svcatt
+	helm install --name svcatt charts/svcatt
 
 create-cluster:
 	./hack/create-cluster.sh
 
-test: build-image
+test:
 	$(DO) ./hack/test.sh
+
+.PHONY: default build-image codegen build build-runtime runtime-image push run deploy create-cluster test
