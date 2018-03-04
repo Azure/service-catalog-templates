@@ -1,0 +1,16 @@
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: BrokerInstanceTemplate
+metadata:
+  name: default-mysqldb
+  labels:
+    serviceType: mysqldb
+spec:
+  serviceType: mysqldb
+  clusterServiceClassExternalName: {{ .Values.clusterServiceClassExternalName }}
+  clusterServicePlanExternalName: {{ .Values.clusterServicePlanExternalName }}
+  parameters:
+    location: {{ .Values.parameters.location }}
+    resourceGroup: {{ .Values.parameters.resourceGroup }}
+    sslEnforcement: {{ .Values.parameters.sslEnforcement }}
+    firewallStartIPAddress: {{ .Values.parameters.firewallStartIPAddress }}
+    firewallEndIPAddress: {{ .Values.parameters.firewallEndIPAddress }}

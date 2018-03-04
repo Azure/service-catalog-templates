@@ -23,16 +23,16 @@ build: pkg/client
 	echo $(BINDIR)
 	$(DO) ./build/build.sh
 
-runtime-image: build/service-catalog-templates/service-catalog-templates
+push: build
 	docker build -t $(RUNTIME_IMG) ./build/service-catalog-templates
-
-push:
 	docker push $(RUNTIME_IMG)
 
 run:
 	$(DO) ./hack/run.sh
 
 deploy:
+	helm upgrade --install svcatt-crd charts/svcatt-crd
+	helm upgrade --install svcatt-osba charts/svcatt-osba --debug
 	-helm delete --purge svcatt
 	helm install --name svcatt charts/svcatt
 

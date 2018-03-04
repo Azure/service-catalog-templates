@@ -48,7 +48,7 @@ func ShadowSecretName(name string) string {
 }
 
 func BoundSecretName(name string) string {
-	return strings.TrimRight(name, SecretSuffix)
+	return strings.TrimSuffix(name, SecretSuffix)
 }
 
 func mapSecretKeys(keys map[string]string, data map[string][]byte) map[string][]byte {

@@ -2,13 +2,7 @@
 
 set -xeuo pipefail
 
-kubectl apply -f artifacts/broker-instance-template.yaml
-kubectl apply -f artifacts/cluster-instance-template.yaml
-kubectl apply -f artifacts/instance-template.yaml
-kubectl apply -f artifacts/broker-binding-template.yaml
-kubectl apply -f artifacts/cluster-binding-template.yaml
-kubectl apply -f artifacts/binding-template.yaml
-kubectl apply -f artifacts/templated-instance.yaml
-kubectl apply -f artifacts/templated-binding.yaml
+helm upgrade --install svcatt-crd charts/svcatt-crd
+helm upgrade --install svcatt-osba charts/svcatt-osba
 
 go run ./cmd/service-catalog-templates/*.go --logtostderr=1 -v=10

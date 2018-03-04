@@ -1,0 +1,1 @@
+See https://github.com/Azure/service-catalog-templates/doc for how to use Service Catalog Templates.

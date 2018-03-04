@@ -1,0 +1,6 @@
+image:
+  repository: carolynvs/service-catalog-templates
+  tag: latest
+  pullPolicy: Always
+
+serviceAccountName: service-catalog-templates
