@@ -1,8 +1,6 @@
-clusterServiceClassExternalName: azure-mysqldb
+clusterServiceClassExternalName: azure-mysql
 clusterServicePlanExternalName: basic50
 parameters:
-  location: centralus
+  location: eastus
   resourceGroup: default
   sslEnforcement: disabled
-  firewallStartIPAddress: "0.0.0.0"
-  firewallEndIPAddress: "255.255.255.255"

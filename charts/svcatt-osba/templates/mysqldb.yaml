@@ -12,5 +12,16 @@ spec:
     location: {{ .Values.parameters.location }}
     resourceGroup: {{ .Values.parameters.resourceGroup }}
     sslEnforcement: {{ .Values.parameters.sslEnforcement }}
-    firewallStartIPAddress: {{ .Values.parameters.firewallStartIPAddress }}
-    firewallEndIPAddress: {{ .Values.parameters.firewallEndIPAddress }}
+    firewallRules:
+    - startIPAddress: "0.0.0.0"
+      endIPAddress: "255.255.255.255"
+      name: "AllowAll"
+---
+apiVersion: templates.servicecatalog.k8s.io/experimental
+kind: BrokerBindingTemplate
+metadata:
+  name: default-mysqldb
+  labels:
+    serviceType: mysqldb
+  spec:
+    serviceType: mysqldb
