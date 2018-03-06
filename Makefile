@@ -27,14 +27,12 @@ push: build
 	docker build -t $(RUNTIME_IMG) ./build/service-catalog-templates
 	docker push $(RUNTIME_IMG)
 
-run:
-	$(DO) ./hack/run.sh
-
-deploy:
-	helm upgrade --install svcatt-crd charts/svcatt-crd
-	helm upgrade --install svcatt-osba charts/svcatt-osba --debug
-	-helm delete --purge svcatt
-	helm install --name svcatt charts/svcatt
+deploy: push
+	helm upgrade --install svcatt-crd --namespace svcatt charts/svcatt-crd
+	helm upgrade --install svcatt-osba --namespace svcatt charts/svcatt-osba
+	helm upgrade --install svcatt --namespace svcatt \
+		--recreate-pods --force charts/svcatt \
+		--set image.Repository="$(RUNTIME_IMAGE)",image.tag="latest",image.pullPolicy="Always",deploymentStrategy="Recreate"
 
 create-cluster:
 	./hack/create-cluster.sh

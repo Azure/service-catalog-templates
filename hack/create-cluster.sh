@@ -9,7 +9,7 @@ if [[ "$(minikube status)" != *"Running"* ]]; then
 fi
 
 kubectl apply -f https://raw.githubusercontent.com/Azure/helm-charts/master/docs/prerequisities/helm-rbac-config.yaml
-helm init --service-account tiller
+helm init --service-account tiller --tiller-image docker.io/carolynvs/tiller:canary
 watch kubectl get pods -n kube-system
 
 helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
