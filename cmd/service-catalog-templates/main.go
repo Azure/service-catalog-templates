@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -61,12 +62,13 @@ func main() {
 	templatesInformerFactory := informers.NewSharedInformerFactory(templatesClient, duration)
 
 	coreSDK := coresdk.New(coreClient, coreInformerFactory)
-	templateSDK := sdk.New(templatesClient, templatesInformerFactory)
 	svcatSDK := svcatsdk.New(svcatClient, svcatInformerFactory)
+	templateSDK := sdk.New(templatesClient, templatesInformerFactory)
 
 	// Wait for the caches to be synced before starting
 	glog.Info("Initializing...")
-	var initG errgroup.Group
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	initG, ctx := errgroup.WithContext(ctx)
 	initG.Go(func() error { return coreSDK.Init(stopCh) })
 	initG.Go(func() error { return svcatSDK.Init(stopCh) })
 	initG.Go(func() error { return templateSDK.Init(stopCh) })

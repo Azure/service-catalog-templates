@@ -29,9 +29,10 @@ func New(client svcatclient.Interface, factory svcatfactory.SharedInformerFactor
 }
 
 func (sdk *SDK) Init(stopCh <-chan struct{}) error {
-	go sdk.Factory.Start(stopCh)
 	inst := sdk.Cache().ServiceInstances().Informer()
 	bnd := sdk.Cache().ServiceBindings().Informer()
+	go sdk.Factory.Start(stopCh)
+
 	if ok := cache.WaitForCacheSync(stopCh,
 		inst.HasSynced,
 		bnd.HasSynced); !ok {

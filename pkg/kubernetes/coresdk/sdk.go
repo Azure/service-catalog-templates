@@ -29,8 +29,9 @@ func New(client coreclient.Interface, factory corefactory.SharedInformerFactory)
 }
 
 func (sdk *SDK) Init(stopCh <-chan struct{}) error {
-	go sdk.Factory.Start(stopCh)
 	secretsInformer := sdk.Cache().Secrets().Informer()
+	go sdk.Factory.Start(stopCh)
+
 	if ok := cache.WaitForCacheSync(stopCh,
 		secretsInformer.HasSynced); !ok {
 		return fmt.Errorf("failed to wait for core caches to sync")
