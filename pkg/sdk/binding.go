@@ -2,7 +2,6 @@ package sdk
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	templates "github.com/Azure/service-catalog-templates/pkg/apis/templates/experimental"
 
@@ -29,46 +28,46 @@ func (sdk *SDK) GetBindingOwner(svcBnd *svcat.ServiceBinding) (*templates.Templa
 }
 
 func (sdk *SDK) GetBindingTemplateByServiceType(serviceType, namespace string) (*templates.BindingTemplate, error) {
-	opts := labels.SelectorFromSet(map[string]string{
-		templates.FieldServiceTypeName: serviceType,
-	})
-	results, err := sdk.BindingTemplateCache().BindingTemplates(namespace).List(opts)
+	opts := metav1.ListOptions{
+		LabelSelector: sdk.filterByServiceTypeLabel(serviceType).String(),
+	}
+	results, err := sdk.Templates().BindingTemplates(namespace).List(opts)
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
+	if len(results.Items) == 0 {
 		return nil, nil
 	}
 
-	return results[0].DeepCopy(), nil
+	return &results.Items[0], nil
 }
 
 func (sdk *SDK) GetClusterBindingTemplateByServiceType(serviceType string) (*templates.ClusterBindingTemplate, error) {
-	opts := labels.SelectorFromSet(map[string]string{
-		templates.FieldServiceTypeName: serviceType,
-	})
-	results, err := sdk.ClusterBindingTemplateCache().List(opts)
+	opts := metav1.ListOptions{
+		LabelSelector: sdk.filterByServiceTypeLabel(serviceType).String(),
+	}
+	results, err := sdk.Templates().ClusterBindingTemplates().List(opts)
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
+	if len(results.Items) == 0 {
 		return nil, nil
 	}
 
-	return results[0].DeepCopy(), nil
+	return &results.Items[0], nil
 }
 
 func (sdk *SDK) GetBrokerBindingTemplateByServiceType(serviceType string) (*templates.BrokerBindingTemplate, error) {
-	opts := labels.SelectorFromSet(map[string]string{
-		templates.FieldServiceTypeName: serviceType,
-	})
-	results, err := sdk.BrokerBindingTemplateCache().List(opts)
+	opts := metav1.ListOptions{
+		LabelSelector: sdk.filterByServiceTypeLabel(serviceType).String(),
+	}
+	results, err := sdk.Templates().BrokerBindingTemplates().List(opts)
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
+	if len(results.Items) == 0 {
 		return nil, nil
 	}
 
-	return results[0].DeepCopy(), nil
+	return &results.Items[0], nil
 }

@@ -64,31 +64,44 @@ func (r *resolver) ResolveInstanceTemplate(instance templates.TemplatedInstance)
 	return template, nil
 }
 
-func (r *resolver) ResolveBindingTemplate(tbnd templates.TemplatedBinding) (template templates.BindingTemplateInterface, err error) {
+func (r *resolver) ResolveBindingTemplate(tbnd templates.TemplatedBinding) (templates.BindingTemplateInterface, error) {
 	tinst, err := r.sdk.GetInstanceFromCache(tbnd.Namespace, tbnd.Spec.InstanceRef.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	template, err = r.sdk.GetBindingTemplateByServiceType(tinst.Spec.ServiceType, tbnd.Namespace)
+	var template templates.BindingTemplateInterface
+
+	bndt, err := r.sdk.GetBindingTemplateByServiceType(tinst.Spec.ServiceType, tbnd.Namespace)
 	if err != nil {
 		return nil, err
 	}
+	if bndt != nil {
+		template = bndt
+	}
+
 	if template == nil {
-		template, err = r.sdk.GetClusterBindingTemplateByServiceType(tinst.Spec.ServiceType)
+		cbndt, err := r.sdk.GetClusterBindingTemplateByServiceType(tinst.Spec.ServiceType)
 		if err != nil {
 			return nil, err
 		}
-	}
-	if template == nil {
-		template, err = r.sdk.GetBrokerBindingTemplateByServiceType(tinst.Spec.ServiceType)
-		if err != nil {
-			return nil, err
+		if cbndt != nil {
+			template = cbndt
 		}
 	}
 
 	if template == nil {
-		return nil, fmt.Errorf("unable to resolve an tbnd template for service type: %s in namespace: %s",
+		bbndt, err := r.sdk.GetBrokerBindingTemplateByServiceType(tinst.Spec.ServiceType)
+		if err != nil {
+			return nil, err
+		}
+		if bbndt != nil {
+			template = bbndt
+		}
+	}
+
+	if template == nil {
+		return nil, fmt.Errorf("unable to resolve an binding template for service type: %s in namespace: %s",
 			tinst.Spec.ServiceType, tbnd.Namespace)
 	}
 
