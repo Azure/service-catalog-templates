@@ -23,7 +23,7 @@ func newResolver(sdk *sdk.SDK, svcatSDK *svcatsdk.SDK) *resolver {
 	}
 }
 
-func (r *resolver) ResolveInstanceTemplate(instance templates.TemplatedInstance) (templates.InstanceTemplateInterface, error) {
+func (r *resolver) ResolveInstanceTemplate(instance *templates.TemplatedInstance) (templates.InstanceTemplateInterface, error) {
 	nsTemplate, err := r.sdk.GetInstanceTemplateByServiceType(instance.Spec.ServiceType, instance.Namespace)
 	if err != nil {
 		return nil, err
@@ -39,14 +39,21 @@ func (r *resolver) ResolveInstanceTemplate(instance templates.TemplatedInstance)
 		return nil, err
 	}
 
+	var template templates.InstanceTemplateInterface
 	if nsTemplate == nil && clusterTemplate == nil && brokerTemplate == nil {
-		return nil, fmt.Errorf("unable to resolve an instance template for service type: %s in namespace: %s",
-			instance.Spec.ServiceType, instance.Namespace)
-	}
+		if r.requiresInstanceTemplate(instance) {
+			return nil, fmt.Errorf("unable to resolve an instance template for service type: %s in namespace: %s",
+				instance.Spec.ServiceType, instance.Namespace)
+		}
 
-	template, err := r.mergeInstanceTemplates(nsTemplate, clusterTemplate, brokerTemplate)
-	if err != nil {
-		return nil, err
+		// Just use a blank template since it's okay to use a TemplatedInstance even when you don't need us to resolve a plan
+		// i.e. they used to use it and now have picked a plan, or maybe still need it for mapping secret keys, etc.
+		template = &templates.InstanceTemplate{}
+	} else {
+		template, err = r.mergeInstanceTemplates(nsTemplate, clusterTemplate, brokerTemplate)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// TODO: if a plan selector is specified, pick a different plan from the template's default
@@ -62,6 +69,15 @@ func (r *resolver) ResolveInstanceTemplate(instance templates.TemplatedInstance)
 	}
 
 	return template, nil
+}
+
+func (r *resolver) requiresInstanceTemplate(inst *templates.TemplatedInstance) bool {
+	if (inst.Spec.ClusterServiceClassName != "" || inst.Spec.ClusterServiceClassExternalName != "") &&
+		(inst.Spec.ClusterServicePlanName != "" || inst.Spec.ClusterServicePlanExternalName != "") {
+		return false
+	}
+
+	return true
 }
 
 func (r *resolver) ResolveBindingTemplate(tbnd templates.TemplatedBinding) (templates.BindingTemplateInterface, error) {
@@ -108,7 +124,7 @@ func (r *resolver) ResolveBindingTemplate(tbnd templates.TemplatedBinding) (temp
 	return template, nil
 }
 
-func (r *resolver) ResolvePlan(instance templates.TemplatedInstance) (*svcat.ClusterServiceClass, *svcat.ClusterServicePlan, error) {
+func (r *resolver) ResolvePlan(instance *templates.TemplatedInstance) (*svcat.ClusterServiceClass, *svcat.ClusterServicePlan, error) {
 	// TODO: using the plan selector and type select a matching plan
 	return nil, nil, nil
 }

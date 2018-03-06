@@ -124,7 +124,7 @@ func (s *Synchronizer) SynchronizeInstance(key string) (bool, runtime.Object, er
 	svcInst, err := s.svcatSDK.GetInstanceFromCache(tinst.Namespace, tinst.Name)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
-		template, err := s.resolver.ResolveInstanceTemplate(*tinst)
+		template, err := s.resolver.ResolveInstanceTemplate(tinst)
 		if err != nil {
 			// TODO: Update status to unresolvable
 			return false, tinst, err
