@@ -18,8 +18,8 @@ decisions, and then contribute it upstream to Kubernetes.
 
 # QuickStart
 
-1. Create a cluster with a service broker installed. The [Open Service Broker for Azure QuickStart on Minikube](https://github.com/Azure/open-service-broker-azure/blob/master/docs/quickstart-minikube.md)
-    is a great guide to get up and running quickly.
+1. Create a cluster (v1.9+) with a service broker installed. The [Open Service Broker for Azure QuickStart on Minikube](https://github.com/Azure/open-service-broker-azure/blob/master/docs/quickstart-minikube.md)
+    is a great guide to get up and running quickly. Currently supporting `v0.9.0-alpha` of the Open Service Broker for Azure.
 1. Clone this repository and change to its directory:
 
     ```
