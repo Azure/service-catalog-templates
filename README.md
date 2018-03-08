@@ -20,6 +20,7 @@ decisions, and then contribute it upstream to Kubernetes.
 
 1. Create a cluster (v1.9+) with a service broker installed. The [Open Service Broker for Azure QuickStart on Minikube](https://github.com/Azure/open-service-broker-azure/blob/master/docs/quickstart-minikube.md)
     is a great guide to get up and running quickly. Currently supporting `v0.9.0-alpha` of the Open Service Broker for Azure.
+
 1. Clone this repository and change to its directory:
 
     ```
@@ -27,7 +28,13 @@ decisions, and then contribute it upstream to Kubernetes.
     cd service-catalog-templates
     ```
 
-1. Install the Service Catalog Templates prototype:
+1. Install the Service Catalog Templates CLI, svcatt:
+
+    ```
+    go install ./cmd/svcatt
+    ```
+
+1. Install Service Catalog Templates on your cluster:
 
     ```
     helm install --name svcatt-crd --namespace svcatt charts/svcatt-crd --wait
@@ -109,26 +116,33 @@ metadata:
 Using the OSBA broker template, the Templates controller created a corresponding ServiceInstance:
 
 ```console
-$ svcat get instances -n svcatt
+$ svcatt get templated-instances -n svcatt
+                 NAME                  NAMESPACE   SERVICE TYPE      CLASS       PLAN     STATUS
++------------------------------------+-----------+--------------+-------------+---------+--------+
+  wordpress-wordpress-mysql-instance   svcatt      mysqldb        azure-mysql   basic50
+
+$ svcatt get instances -n svcatt
                  NAME                  NAMESPACE      CLASS       PLAN        STATUS
 +------------------------------------+-----------+-------------+---------+--------------+
   wordpress-wordpress-mysql-instance   svcatt      azure-mysql   basic50   Provisioning
 ```
 
+\* NOTE: The status field on Templated resources is not implented yet.
+
 Before we can proceed, wait until the instance is `Ready`:
 
 ```console
-$ watch svcat get instances -n svcatt
+$ watch svcatt get instances -n svcatt
                  NAME                  NAMESPACE      CLASS       PLAN     STATUS
 +------------------------------------+-----------+-------------+---------+--------+
   wordpress-wordpress-mysql-instance   svcatt      azure-mysql   basic50   Ready
 ```
 
-After the instance was provisioned, Service Catalog created a secret named "wordpress-mysql-secret-template"
+After the instance is provisioned, Service Catalog creates a secret named "wordpress-mysql-secret-template"
 containing the values returned from the broker:
  
 ```console
-$ kubectl describe secret wordpress-wordpress-mysql-secret-template
+$ kubectl describe secret wordpress-wordpress-mysql-secret-template -n svcatt
 Name:         wordpress-wordpress-mysql-secret-template
 Namespace:    svcatt
 Labels:       <none>
@@ -152,7 +166,7 @@ The Templates controller then applied the TemplatedBinding from the Wordpress ch
 creating the final secret for Wordpress to bind to:
 
 ```console
-$ kubectl describe secret wordpress-wordpress-mysql-secret
+$ kubectl describe secret wordpress-wordpress-mysql-secret -n svcatt
 Name:         wordpress-wordpress-mysql-secret
 Namespace:    svcatt
 Labels:       <none>
@@ -185,6 +199,30 @@ open http://$(minikube ip):$(kubectl get service wordpress-wordpress -n svcatt -
 ```
 
 MAGIC! 🎩✨
+
+Now let's clean up the resources created by this quickstart:
+
+```console
+$ svcatt unbind wordpress-wordpress-mysql-instance -n svcatt
+deleted wordpress-wordpress-mysql-binding
+
+$ svcatt get templated-bindings -n svcatt
+  NAME   NAMESPACE   INSTANCE   STATUS
++------+-----------+----------+--------+
+
+$ svcatt deprovision wordpress-wordpress-mysql-instance -n svcatt
+
+$ svcatt get templated-instances -n svcatt
+  NAME   NAMESPACE   SERVICE TYPE   CLASS   PLAN   STATUS
++------+-----------+--------------+-------+------+--------+
+
+$ svcatt get instances -n svcatt
+               NAME                  NAMESPACE      CLASS       PLAN         STATUS
++------------------------------------+-----------+-------------+---------+----------------+
+wordpress-wordpress-mysql-instance   svcatt      azure-mysql   basic50   Deprovisioning
+```
+
+\* NOTE: The templated instance is deleted immediately because a finalizer has not yet been implemented.
 
 # Contributing
 
