@@ -1,0 +1,152 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/Azure/service-catalog-templates
+    docker:
+    - image: quay.io/deis/go-dev:v1.9.0
+    environment:
+    - NO_DOCKER: true
+    steps:
+    - checkout
+    - run:
+        name: Run Build
+        command: make build svcatt
+  test:
+    working_directory: /go/src/github.com/Azure/service-catalog-templates
+    docker:
+    - image: quay.io/deis/go-dev:v1.9.0
+    environment:
+    - NO_DOCKER: true
+    steps:
+    - checkout
+    - run:
+        name: Run Unit Tests
+        command: make test-unit
+  verify-vendor:
+    working_directory: /go/src/github.com/Azure/service-catalog-templates
+    docker:
+    - image: quay.io/deis/go-dev:v1.9.0
+    environment:
+    - NO_DOCKER: true
+    steps:
+    - checkout
+    - run:
+        name: Verify vendor/
+        command: make get-dep verify-vendor
+  publish-cli:
+    working_directory: /go/src/github.com/Azure/service-catalog-templates
+    docker:
+    - image: quay.io/deis/go-dev:v1.9.0
+    environment:
+    - NO_DOCKER: true
+    steps:
+    - checkout
+    - run:
+        name: Publish CLI
+        command: make publish-cli
+  publish-charts:
+    working_directory: /go/src/github.com/Azure/service-catalog-templates
+    docker:
+      - image: quay.io/deis/go-dev:v1.9.0
+    steps:
+      - checkout
+      - run:
+          name: Publish Helm Charts
+          command: make publish-charts
+workflows:
+  version: 2
+  build-and-test-pr:
+    jobs:
+    - hold:
+        type: approval
+        filters:
+          branches:
+            ignore: master
+    - build:
+        requires:
+        - hold
+        filters:
+          branches:
+            ignore: master
+    - verify-vendor:
+        requires:
+        - hold
+        filters:
+          branches:
+            ignore: master
+    - test:
+        requires:
+        - hold
+        filters:
+          branches:
+            ignore: master
+  build-and-test-master:
+    jobs:
+    - build:
+        filters:
+          branches:
+            only: master
+    - verify-vendor:
+        filters:
+          branches:
+            only: master
+    - test:
+        filters:
+          branches:
+            only: master
+    - publish-cli:
+        requires:
+        - verify-vendor
+        - build
+        - test
+        filters:
+          branches:
+            only: master
+    - publish-charts:
+        requires:
+        - verify-vendor
+        - build
+        - test
+        filters:
+          branches:
+            only: master
+  build-and-test-tags:
+    jobs:
+    - build:
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /v[0-9]+(\.[0-9]+)*/
+    - verify-vendor:
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /v[0-9]+(\.[0-9]+)*/
+    - test:
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /v[0-9]+(\.[0-9]+)*/
+    - publish-cli:
+        requires:
+        - verify-vendor
+        - build
+        - test
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /v[0-9]+(\.[0-9]+)*/
+    - publish-charts:
+        requires:
+        - verify-vendor
+        - build
+        - test
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /v[0-9]+(\.[0-9]+)*/
