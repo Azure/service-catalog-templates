@@ -21,32 +21,31 @@ decisions, and then contribute it upstream to Kubernetes.
 1. Create a cluster (v1.9+) with a service broker installed. The [Open Service Broker for Azure QuickStart on Minikube](https://github.com/Azure/open-service-broker-azure/blob/master/docs/quickstart-minikube.md)
     is a great guide to get up and running quickly. Currently supporting `v0.9.0-alpha` of the Open Service Broker for Azure.
 
-1. Clone this repository and change to its directory:
-
-    ```
-    git clone https://github.com/Azure/service-catalog-templates.git
-    cd service-catalog-templates
-    ```
-
 1. Install the Service Catalog Templates CLI, svcatt:
 
-    ```
-    go install ./cmd/svcatt
+    ```bash
+    curl -sLO https://svcatt.blob.core.windows.net/cli/canary/$(uname -s)/$(uname -m)/svcatt
+    chmod +x ./svcatt
+    mv ./svcatt /usr/local/bin/
+    svcatt --version
     ```
 
+    This is an extension of the Service Catalog CLI, svcat. Naming suggestions welcome! 😉
+    
 1. Install Service Catalog Templates on your cluster:
 
     ```
-    helm install --name svcatt-crd --namespace svcatt charts/svcatt-crd --wait
-    helm install --name svcatt-osba --namespace svcatt charts/svcatt-osba --wait
-    helm install --name svcatt --namespace svcatt charts/svcatt --wait
+    helm repo add svcatt https://svcatt.blob.core.windows.net/charts
+    helm install --name svcatt-crd --namespace svcatt --wait svcatt/service-catalog-templates-resources
+    helm install --name svcatt-osba --namespace svcatt --wait svcatt/service-catalog-templates-osba
+    helm install --name svcatt --namespace svcatt --wait svcatt/service-catalog-templates
     ```
 
 1. Install the example Wordpress chart that takes advantage of Service Catalog Templates
     to provision a provider agnostic mysql database.
     
     ```
-    helm install --name wordpress charts/wordpress --namespace svcatt
+    helm install --name wordpress --namespace svcatt svcatt/wordpress
     ```
     
 While the database provisions (it can take a while!), let's take a look at what 
@@ -200,7 +199,7 @@ open http://$(minikube ip):$(kubectl get service wordpress-wordpress -n svcatt -
 
 MAGIC! 🎩✨
 
-Now let's clean up the resources created by this quickstart:
+Now let's clean up the resources provisioned by this quickstart:
 
 ```console
 $ svcatt unbind wordpress-wordpress-mysql-instance -n svcatt
