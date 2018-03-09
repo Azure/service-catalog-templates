@@ -24,7 +24,7 @@ decisions, and then contribute it upstream to Kubernetes.
 1. Install the Service Catalog Templates CLI, svcatt:
 
     ```bash
-    curl -sLO https://svcatt.blob.core.windows.net/cli/canary/$(uname -s)/$(uname -m)/svcatt
+    curl -sLO https://svcatt.blob.core.windows.net/cli/latest/$(uname -s)/$(uname -m)/svcatt
     chmod +x ./svcatt
     mv ./svcatt /usr/local/bin/
     svcatt --version
