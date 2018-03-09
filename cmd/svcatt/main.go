@@ -12,6 +12,7 @@ import (
 	"github.com/Azure/service-catalog-templates/cmd/svcatt/instance-template"
 	"github.com/Azure/service-catalog-templates/cmd/svcatt/templated-binding"
 	"github.com/Azure/service-catalog-templates/cmd/svcatt/templated-instance"
+	"github.com/Azure/service-catalog-templates/pkg"
 	"github.com/Azure/service-catalog-templates/pkg/svcatt"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
@@ -19,7 +20,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
-	"github.com/kubernetes-incubator/service-catalog/pkg"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -93,7 +93,7 @@ func buildRootCommand() *cobra.Command {
 }
 
 func printVersion(cxt *svcattcommand.Context) {
-	fmt.Fprintf(cxt.Output, "svcatt %s (with Templates support)\n", pkg.VERSION)
+	fmt.Fprintf(cxt.Output, "svcatt %s (with Templates support)\n", pkg.Version)
 }
 
 func newSyncCmd(cxt *svcattcommand.Context) *cobra.Command {

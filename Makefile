@@ -85,7 +85,7 @@ clean:
 	-rm build/service-catalog-templates/service-catalog-templates
 
 svcatt: pkg/client
-	go build -o bin/svcatt ./cmd/svcatt
+	go build -o bin/svcatt -ldflags '$(LDFLAGS)' ./cmd/svcatt
 
 svcatt-linux:
 	GOOS=linux GOARCH=amd64 $(XBUILD) -o $(RELEASE_DIR)/Linux/x86_64/svcatt ./cmd/svcatt
@@ -111,3 +111,5 @@ publish-cli: clean svcatt-all
 
 publish-charts: clean
 	./build/publish-charts.sh
+
+.PHONY: svcatt
