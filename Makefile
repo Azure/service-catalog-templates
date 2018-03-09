@@ -5,7 +5,8 @@ GOPATH = $(shell go env GOPATH)
 PKG_PATH = /go/src/$(PKG)
 GOCACHE = $(PKG_PATH)/.gocache
 
-PERMALINK ?= canary
+# Tagged commits should publish to latest, otherwise canary
+PERMALINK ?= $(shell git name-rev --name-only --tags --no-undefined HEAD &> /dev/null && echo latest || echo canary)
 VERSION ?= $(shell git describe --tags --dirty='+dev' 2> /dev/null || echo v0)
 LDFLAGS = -w -X $(PKG)/pkg.Version=$(VERSION)
 XBUILD = CGO_ENABLED=0 go build -a -tags netgo -ldflags '$(LDFLAGS)'

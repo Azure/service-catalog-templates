@@ -47,12 +47,14 @@ jobs:
   publish-charts:
     working_directory: /go/src/github.com/Azure/service-catalog-templates
     docker:
-      - image: quay.io/deis/go-dev:v1.9.0
+    - image: quay.io/deis/go-dev:v1.9.0
+    environment:
+    - NO_DOCKER: true
     steps:
-      - checkout
-      - run:
-          name: Publish Helm Charts
-          command: make publish-charts
+    - checkout
+    - run:
+        name: Publish Helm Charts
+        command: make publish-charts
 workflows:
   version: 2
   build-and-test-pr:
