@@ -13,8 +13,7 @@ broker-specific parameters for a particular class and plan.
 
 [Read the full proposal](https://docs.google.com/document/d/1vUxiOCKdnl47RKzeRgJ43_6eV2g95T6yM_m50Msrm3c)
 
-This repository is a proof of concept for the above proposal. Our goal is to validate assumptions and technical 
-decisions, and then contribute it upstream to Kubernetes.
+This repository is a proof of concept **on the user experience** for the above proposal. Our goal is to validate assumptions and workflow; the implementation is a throwaway because it uses some awkward wrapping/hacks to avoid modifying Service Catalog directly.
 
 # QuickStart
 
